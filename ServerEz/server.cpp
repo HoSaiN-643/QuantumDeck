@@ -1,3 +1,4 @@
+
 #include "server.h"
 #include <QDebug>
 
@@ -91,15 +92,19 @@ void SERVER::OnReadyRead()
         QString type = f.at(0).toUpper();
         QString id   = f.at(1);
         QString pwd  = f.at(2);
-
+        QString uname;
         QVariantMap member;
         if (type == QStringLiteral("E")) {
             member = db.GetMemberByEmail(id);
+            uname = member.value("username").toString();
+
             qDebug() << "Login with Email:" << id;
         }
         else if (type == QStringLiteral("U")) {
             member = db.GetMemberByUsername(id);
             qDebug() << "Login with Username:" << id;
+            uname = member.value("username").toString();
+
         }
         else {
             client->write("L[ERROR][BadLoginType]");
@@ -117,6 +122,7 @@ void SERVER::OnReadyRead()
         }
         else {
             client->write("L[OK][Login successful]");
+            clients[client] = uname;
             qDebug() << "Login successful for" << id;
         }
     }
