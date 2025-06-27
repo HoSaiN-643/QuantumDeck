@@ -5,6 +5,7 @@
 #include <QHostAddress>
 
 class QTcpSocket;
+class Player;
 
 class Client : public QObject
 {
@@ -17,6 +18,7 @@ public:
     // این متد دقیقاً اسمش مثل شماست
     void ConnectToServer(const QHostAddress &host, quint16 port);
     void DisconnectFromServer();
+    void WriteToServer(const QString& data);
 
 signals:
     void ConnectedToServer();
@@ -27,9 +29,13 @@ private slots:
     void onConnected();
     void onDisconnected();
     void onError(QAbstractSocket::SocketError socketError);
+    void OnReadyRead();
 
 private:
     QTcpSocket *m_socket;
+    Player* player;
+
+
 };
 
 #endif // CLIENT_H

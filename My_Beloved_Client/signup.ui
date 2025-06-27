@@ -65,7 +65,7 @@
         <string>First name</string>
        </property>
       </widget>
-      <widget class="QTextEdit" name="textEdit">
+      <widget class="QTextEdit" name="First_Name_Text">
        <property name="geometry">
         <rect>
          <x>150</x>
@@ -88,7 +88,7 @@
         <string>Last name</string>
        </property>
       </widget>
-      <widget class="QTextEdit" name="textEdit_2">
+      <widget class="QTextEdit" name="Last_Name_Text">
        <property name="geometry">
         <rect>
          <x>440</x>
@@ -111,7 +111,7 @@
         <string>Phone number</string>
        </property>
       </widget>
-      <widget class="QTextEdit" name="textEdit_3">
+      <widget class="QTextEdit" name="Phone_Text">
        <property name="geometry">
         <rect>
          <x>150</x>
@@ -134,7 +134,7 @@
         <string>Email</string>
        </property>
       </widget>
-      <widget class="QTextEdit" name="textEdit_4">
+      <widget class="QTextEdit" name="Email_Text">
        <property name="geometry">
         <rect>
          <x>440</x>
@@ -157,7 +157,7 @@
         <string>Username</string>
        </property>
       </widget>
-      <widget class="QTextEdit" name="textEdit_5">
+      <widget class="QTextEdit" name="Uname_Text">
        <property name="geometry">
         <rect>
          <x>150</x>
@@ -193,7 +193,7 @@
         <string>Confirm your password</string>
        </property>
       </widget>
-      <widget class="QTextEdit" name="textEdit_6">
+      <widget class="QTextEdit" name="Pwd_text">
        <property name="geometry">
         <rect>
          <x>150</x>
@@ -203,7 +203,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QTextEdit" name="textEdit_7">
+      <widget class="QTextEdit" name="Confirm_Pwd_text">
        <property name="geometry">
         <rect>
          <x>150</x>
@@ -213,7 +213,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="SignUp_Btn">
        <property name="geometry">
         <rect>
          <x>150</x>

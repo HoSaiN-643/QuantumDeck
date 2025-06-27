@@ -18,6 +18,7 @@ SOURCES += \
     main.cpp \
     connect.cpp \
     mainmenu.cpp \
+    player.cpp \
     recoverpass.cpp \
     signup.cpp \
     start.cpp \
@@ -32,6 +33,7 @@ HEADERS += \
     log.h \
     login.h \
     mainmenu.h \
+    player.h \
     recoverpass.h \
     signup.h \
     start.h \

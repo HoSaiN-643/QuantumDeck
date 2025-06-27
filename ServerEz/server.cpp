@@ -121,7 +121,18 @@ void SERVER::OnReadyRead()
             qDebug() << "Wrong password for" << id;
         }
         else {
-            client->write("L[OK][Login successful]");
+            QString data = QString(
+                   "L[OK][successfull login]"
+                     "[%1][%2][%3][%4][%5][%6]"
+                     ).arg(
+                    member.value("firstname").toString(),
+                    member.value("lastname").toString(),
+                    member.value("email").toString(),
+                    member.value("phone").toString(),
+                    member.value("username").toString(),
+                    member.value("password").toString()
+                                   );
+            client->write(data.toUtf8());
             clients[client] = uname;
             qDebug() << "Login successful for" << id;
         }

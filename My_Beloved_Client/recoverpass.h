@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+class Client;
+
 namespace Ui {
 class RecoverPass;
 }
@@ -12,11 +14,12 @@ class RecoverPass : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit RecoverPass(QWidget *parent = nullptr);
+    explicit RecoverPass( Client* client,QWidget *parent = nullptr);
     ~RecoverPass();
 
 private:
     Ui::RecoverPass *ui;
+    Client* client;
 };
 
 #endif // RECOVERPASS_H

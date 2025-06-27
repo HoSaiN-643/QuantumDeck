@@ -1,16 +1,18 @@
 #ifndef MEMBERDATABASEMANAGER_H
 #define MEMBERDATABASEMANAGER_H
 
-#include <QString>
+#include <QObject>
 #include <QSqlDatabase>
-#include <QList>
 #include <QVariantMap>
-#include <QTcpSocket>
+#include <QList>
 
-class MemberDatabaseManager
+class QTcpSocket;
+
+class MemberDatabaseManager : public QObject
 {
+    Q_OBJECT
 public:
-    explicit MemberDatabaseManager(const QString &dbPath);
+    explicit MemberDatabaseManager(const QString &dbPath, QObject *parent = nullptr);
     ~MemberDatabaseManager();
 
     bool open();
@@ -26,27 +28,26 @@ public:
                    const QString &lastname,
                    const QString &phone);
 
-
     bool removeMemberIfCredentialsMatch(const QString &username,
                                         const QString &password);
-
 
     bool updateMemberField(int fieldType,
                            const QString &currentUsername,
                            const QString &newValue);
 
-
     QVariantMap GetMemberByUsername(const QString &username);
     QVariantMap GetMemberByEmail(const QString &email);
+    QVariantMap GetMemberByPhone(const QString &phone);
 
     QList<QVariantMap> getAllMembers();
 
-    QVariantMap GetMemberByPhone(const QString &phone);
+private:
+    bool columnExists(const QString &tableName, const QString &columnName);
+
 private:
     QString      m_dbPath;
+    QString      m_connectionName;
     QSqlDatabase m_db;
-
-    bool columnExists(const QString &tableName, const QString &columnName);
 };
 
 #endif // MEMBERDATABASEMANAGER_H
