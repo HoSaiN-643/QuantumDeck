@@ -13,7 +13,7 @@ QString InputValidator::validateEmail(const QString& email) {
     QRegularExpression emailRegex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
     QRegularExpressionMatch match = emailRegex.match(email);
     if (!match.hasMatch()) {
-        return "فرمت ایمیل نامعتبر است";
+        return "email format is not correct";
     }
     return "";
 }
@@ -21,24 +21,24 @@ QString InputValidator::validateEmail(const QString& email) {
 QString InputValidator::validatePhone(const QString& phone) {
     QString digits = phone.remove(QRegularExpression("\\D"));
     if (digits.length() < 10 || digits.length() > 15) {
-        return "فرمت شماره تلفن نامعتبر است";
+        return " phone number format is not correct";
     }
     return "";
 }
 
 QString InputValidator::validatePassword(const QString& password) {
     if (password.length() < 8) {
-        return "رمز عبور باید حداقل 8 کاراکتر باشد";
+        return " password  at least 8 charcters";
     }
     if (commonPasswords.contains(password)) {
-        return "رمز عبور رایج است، لطفاً رمز قوی‌تری انتخاب کنید";
+        return "password is not strong"
     }
     return "";
 }
 
 QString InputValidator::validateAddress(const QString& address) {
     if (address.trimmed().isEmpty()) {
-        return "آدرس نمی‌تواند خالی باشد";
+        return "address is empty"
     }
     return "";
 }
@@ -47,7 +47,7 @@ QString InputValidator::validatePort(const QString& port) {
     bool ok;
     int p = port.toInt(&ok);
     if (!ok || p < 1 || p > 65535) {
-        return "شماره پورت نامعتبر است";
+        return "invalid port";
     }
     return "";
 }
