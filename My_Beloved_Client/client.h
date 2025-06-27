@@ -2,26 +2,34 @@
 #define CLIENT_H
 
 #include <QObject>
-#include <QTcpSocket>
-#include <log.h>
+#include <QHostAddress>
+
+class QTcpSocket;
 
 class Client : public QObject
 {
     Q_OBJECT
 
-    QTcpSocket* socket;
-    Log logUi;
-
 public:
-    explicit Client(QObject* parent = nullptr);
-    void ConnectToServer(const QHostAddress& address, int port);
+    explicit Client(QObject *parent = nullptr);
+    ~Client();
 
-private slots:
-    void onConnected();
-    void onError(QAbstractSocket::SocketError socketError);
+    // این متد دقیقاً اسمش مثل شماست
+    void ConnectToServer(const QHostAddress &host, quint16 port);
+    void DisconnectFromServer();
 
 signals:
     void ConnectedToServer();
+    void DisconnectedFromServer();
+    void ErrorOccurred(const QString &errorString);
+
+private slots:
+    void onConnected();
+    void onDisconnected();
+    void onError(QAbstractSocket::SocketError socketError);
+
+private:
+    QTcpSocket *m_socket;
 };
 
 #endif // CLIENT_H

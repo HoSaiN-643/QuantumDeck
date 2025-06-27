@@ -2,32 +2,32 @@
 #define LOG_H
 
 #include <QMainWindow>
-#include <login.h>
-#include <signup.h>
+namespace Ui { class Log; }
 
-
-namespace Ui {
-class Log;
-}
+// فقط اعلام
+class Client;
+class Login;
+class Signup;
 
 class Log : public QMainWindow
 {
     Q_OBJECT
-    Login l;
-    Signup s;
 
 public:
-    explicit Log(QWidget *parent = nullptr);
+    explicit Log(Client *client, QWidget *parent = nullptr);
     ~Log();
+
     void Show();
 
 private slots:
     void on_Login_Btn_clicked();
-
     void on_Signup_btn_clicked();
 
 private:
     Ui::Log *ui;
+    Client   *client;
+    Login    *l;
+    Signup   *s;
 };
 
 #endif // LOG_H

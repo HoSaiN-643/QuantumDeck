@@ -19,9 +19,9 @@ QString InputValidator::validateEmail(const QString& email) {
 }
 
 QString InputValidator::validatePhone(const QString& phone) {
-    QString digits = phone.remove(QRegularExpression("\\D"));
-    if (digits.length() < 10 || digits.length() > 15) {
-        return " phone number format is not correct";
+
+    if(phone[0] != "0" || phone.length() < 11 || phone.length() > 15) {
+         return " phone number format is not correct";
     }
     return "";
 }
@@ -31,14 +31,14 @@ QString InputValidator::validatePassword(const QString& password) {
         return " password  at least 8 charcters";
     }
     if (commonPasswords.contains(password)) {
-        return "password is not strong"
+        return "password is not strong";
     }
     return "";
 }
 
 QString InputValidator::validateAddress(const QString& address) {
     if (address.trimmed().isEmpty()) {
-        return "address is empty"
+        return "address is empty";
     }
     return "";
 }

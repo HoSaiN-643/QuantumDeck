@@ -2,28 +2,26 @@
 #define LOGIN_H
 
 #include <QMainWindow>
-
-namespace Ui {
-class Login;
-}
+namespace Ui { class Login; }
+class Client;
 
 class Login : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit Login(QWidget *parent = nullptr);
+    explicit Login(Client *client, QWidget *parent = nullptr);
     ~Login();
 
 private slots:
-    void on_Log_Email_Radio_clicked();
 
-    void on_Log_Uname_Btn_clicked();
+    void Update_Login_Btn();
 
-    void updateLoginBtn();
+    void on_Login_Btn_clicked();
 
 private:
     Ui::Login *ui;
+    Client     *client;
 };
 
 #endif // LOGIN_H

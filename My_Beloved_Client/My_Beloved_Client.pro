@@ -21,7 +21,7 @@ SOURCES += \
     recoverpass.cpp \
     signup.cpp \
     start.cpp \
-    validators.cpp
+    InputValidator.cpp
 
 HEADERS += \
     change_profile.h \
@@ -35,7 +35,7 @@ HEADERS += \
     recoverpass.h \
     signup.h \
     start.h \
-    validators.h
+    InputValidator.h
 
 FORMS += \
     change_profile.ui \

@@ -1,17 +1,19 @@
 #include "login.h"
 #include "ui_login.h"
+#include "client.h"
+#include <QMessageBox>
 
-Login::Login(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::Login)
+Login::Login(Client *client, QWidget *parent)
+    : QMainWindow(parent),
+    ui(new Ui::Login),
+    client(client)
 {
     ui->setupUi(this);
-    ui->Login_Btn->setEnabled(false);
-    connect(ui->Log_Email_Radio,&QRadioButton::clicked,this,&Login::updateLoginBtn);
-    connect(ui->Log_Uname_Radio,&QRadioButton::clicked,this,&Login::updateLoginBtn);
-    connect(ui->Confirm_Pwd_text,&QTextEdit::textChanged,this,&Login::updateLoginBtn);
-    connect(ui->Pwd_text,&QTextEdit::textChanged,this,&Login::updateLoginBtn);
-    connect(ui->UE_text,&QTextEdit::textChanged,this,&Login::updateLoginBtn);
+     ui->Login_Btn->setEnabled(false);
+    connect(ui->Log_Email_Radio,&QRadioButton::clicked,this,&Login::Update_Login_Btn);
+    connect(ui->Log_Uname_Radio,&QRadioButton::clicked,this,&Login::Update_Login_Btn);
+    connect(ui->UE_text,&QTextEdit::textChanged,this,&Login::Update_Login_Btn);
+    connect(ui->Pwd_text,&QTextEdit::textChanged,this,&Login::Update_Login_Btn);
 }
 
 Login::~Login()
@@ -19,25 +21,28 @@ Login::~Login()
     delete ui;
 }
 
-void Login::on_Log_Email_Radio_clicked()
-{
-    ui->UE_Label_2->setText("Email");
-
-}
 
 
-void Login::on_Log_Uname_Btn_clicked()
-{
-    ui->UE_Label_2->setText("Username");
-}
-
-void Login::updateLoginBtn()
+void Login::Update_Login_Btn()
 {
     bool RadioCheck = ui->Log_Email_Radio->isChecked() || ui->Log_Uname_Radio->isChecked();
-    bool TextCheck = !ui->Pwd_text->toPlainText().isEmpty() && !ui->UE_text->toPlainText().isEmpty()
-                     && !ui->Confirm_Pwd_text->toPlainText().isEmpty();
+    bool Textcheck = !ui->UE_text->toPlainText().isEmpty() && !ui->Pwd_text->toPlainText().isEmpty();
 
-    ui->Login_Btn->setEnabled(RadioCheck && TextCheck);
+    if(RadioCheck && Textcheck) {
+        ui->Login_Btn->setEnabled(true);
+    }
 }
 
+void Login::on_Login_Btn_clicked()
+{
+    //۱.بررسی کن کاربر لاگین با یوزرنیم را انتخاب کرده یا لاگین با ایمیل
+    //۲.اگر لاگین با ایمیل بود بررسی کن که ایا ایمیل معتبر است
+    //۳.بررسی کن ایا رمز معتبر است
+    //۴.اگر همه چیز برای ارسال اوکی بود  متود  زیر را انجام بده
+    //client->WriteToServer(QString data)
+    // دیتا باید یک کیو استرینگ باشد و در قالب زیر
+    // "L[type][Username or email][password]"
+    // if user choosed login with email then type should be "E" if it is Username then "U"
+
+}
 

@@ -1,32 +1,60 @@
 #include "client.h"
-#include <QDebug>
+#include <QTcpSocket>
 #include <QAbstractSocket>
+#include <QDebug>
 
-Client::Client(QObject* parent)
+Client::Client(QObject *parent)
     : QObject(parent),
-    socket(new QTcpSocket(this))
+    m_socket(new QTcpSocket(this))
 {
-    connect(socket, &QTcpSocket::connected,
-            this,   &Client::onConnected);
-    connect(socket, &QTcpSocket::errorOccurred,
-            this,   &Client::onError);
+    connect(m_socket, &QTcpSocket::connected,
+            this,     &Client::onConnected);
+    connect(m_socket, &QTcpSocket::disconnected,
+            this,     &Client::onDisconnected);
+    connect(m_socket,
+            QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::errorOccurred),
+            this, &Client::onError);
 }
 
-void Client::ConnectToServer(const QHostAddress& address, int port)
+Client::~Client()
 {
-    qDebug() << "Attempting to connect to" << address.toString() << ":" << port;
-    socket->connectToHost(address, port);
+    if (m_socket->state() == QAbstractSocket::ConnectedState)
+        m_socket->disconnectFromHost();
+    // مفسر Qt‌ خودش m_socket را خواهد کُشت چون parent آن این است.
+}
 
+void Client::ConnectToServer(const QHostAddress &host, quint16 port)
+{
+    m_socket->connectToHost(host, port);
+}
+
+void Client::DisconnectFromServer()
+{
+    if (m_socket->state() == QAbstractSocket::ConnectedState)
+        m_socket->disconnectFromHost();
+}
+
+void Client::WriteToServer(const QString &data)
+{
+    m_socket->write(data.toUtf8());
 }
 
 void Client::onConnected()
 {
-    qDebug() << "Socket connected!";
+    qDebug() << "Client::onConnected";
     emit ConnectedToServer();
 }
 
-void Client::onError(QAbstractSocket::SocketError /*socketError*/)
+void Client::onDisconnected()
 {
-    qWarning() << "Socket error:" << socket->errorString();
+    qDebug() << "Client::onDisconnected";
+    emit DisconnectedFromServer();
+}
 
+void Client::onError(QAbstractSocket::SocketError socketError)
+{
+    Q_UNUSED(socketError);
+    QString err = m_socket->errorString();
+    qDebug() << "Client::onError:" << err;
+    emit ErrorOccurred(err);
 }

@@ -1,15 +1,22 @@
 #ifndef START_H
 #define START_H
-#include "connect.h"
-#include <client.h>
 
-class Start
+#include <QObject>
+
+// فقط اعلام وجود کلاس‌ها
+class Client;
+class Connect;
+
+class Start : public QObject
 {
-    Client* c;
-    Connect* window;
+    Q_OBJECT
+
+    Client *c;
+    Connect *window;
 
 public:
-    Start();
+    explicit Start(QObject *parent = nullptr);
+    ~Start();
 };
 
 #endif // START_H

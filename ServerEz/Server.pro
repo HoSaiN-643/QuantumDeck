@@ -11,6 +11,7 @@ CONFIG += c++17
 SOURCES += \
     card.cpp \
     cardmanager.cpp \
+    game.cpp \
     main.cpp \
     manager.cpp \
     memberdatabasemanager.cpp \
@@ -20,6 +21,7 @@ SOURCES += \
 HEADERS += \
     card.h \
     cardmanager.h \
+    game.h \
     manager.h \
     memberdatabasemanager.h \
     server.h \
