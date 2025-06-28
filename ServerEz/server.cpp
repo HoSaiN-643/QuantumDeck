@@ -122,19 +122,28 @@ void SERVER::OnReadyRead()
             client->write("S[ERROR][BadFormat]");
             return;
         }
-        QString FirstName   = f[0];
-        QString LastName    = f[1];
-        QString PhoneNumber = f[2];
-        QString uname       = f[3];
-        QString email       = f[4];
-        QString pwd_        = f[5];
-        // چک کن که یوزرنیم و ایمیل تکراری نباشه، بعد جواب مناسب بده!
-        if (db.GetMemberByUsername(uname).isEmpty() && db.GetMemberByEmail(email).isEmpty()) {
-            db.addMember(client, uname, email, pwd_, FirstName, LastName, PhoneNumber);
-            client->write("S[OK][Signup successful]");
-        } else {
-            client->write("S[ERROR][Username or Email Taken]");
-        }
+        // ترتیب دقیق: [first][last][email][phone][username][password]
+        const QString first  = f.at(0);
+        const QString last   = f.at(1);
+        const QString email  = f.at(2);
+        const QString phone  = f.at(3);
+        const QString uname  = f.at(4);
+        const QString pwd    = f.at(5);
+
+        // لاگ برای اطمینان
+        qDebug() << "Signup fields:"
+                 << first << last << email << phone << uname << pwd;
+
+        // فراخوانی با ترتیب جدید
+        bool ok = db.addMember(client,
+                               first,    // firstname
+                               last,     // lastname
+                               email,    // email
+                               phone,    // phone
+                               uname,    // username
+                               pwd);     // password
+
+        // (می‌توانید درون addMember پیام ارسال می‌شود)
     }
     else if (cmd == 'R') { // RECOVER
         QStringList f = extractFields(payload);

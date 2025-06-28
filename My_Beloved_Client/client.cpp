@@ -100,6 +100,7 @@ void Client::OnReadyRead()
             }
             QMessageBox::information(nullptr, "Welcome!", "Successfully logined");
             player.SetInfo(fields[2], fields[3], fields[4], fields[5], fields[6], fields[7]);
+            emit SuccesFull_LogIn();
         } else {
             if (fields.size() < 2) return;
             QMessageBox::warning(nullptr, fields[0], fields[1]);

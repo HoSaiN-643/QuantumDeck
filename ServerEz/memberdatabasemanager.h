@@ -5,8 +5,7 @@
 #include <QSqlDatabase>
 #include <QVariantMap>
 #include <QList>
-
-class QTcpSocket;
+#include <QTcpSocket>
 
 class MemberDatabaseManager : public QObject
 {
@@ -18,24 +17,18 @@ public:
     bool open();
     void close();
 
+    bool columnExists(const QString &tableName, const QString &columnName);
     bool createMemberTable();
-
-    bool addMember(QTcpSocket* client,
-                   const QString &username,
-                   const QString &email,
-                   const QString &password,
-                   const QString &firstname,
-                   const QString &lastname,
-                   const QString &phone);
 
     bool removeMemberIfCredentialsMatch(const QString &username,
                                         const QString &password);
 
-    bool updateMemberAllFields(QTcpSocket* socket,const QString &oldUsername,
+    bool updateMemberAllFields(QTcpSocket* socket,
+                               const QString &oldUsername,
                                const QString &firstname,
                                const QString &lastname,
-                               const QString &phone,
                                const QString &email,
+                               const QString &phone,
                                const QString &newUsername,
                                const QString &password);
 
@@ -45,13 +38,23 @@ public:
 
     QList<QVariantMap> getAllMembers();
 
-private:
-    bool columnExists(const QString &tableName, const QString &columnName);
+    // امضای جدید مطابق درخواستی که شما گفتید:
+    // (client, firstname, lastname, email, phone, username, password)
+    bool addMember(QTcpSocket *client,
+                   const QString &firstname,
+                   const QString &lastname,
+                   const QString &email,
+                   const QString &phone,
+                   const QString &username,
+                   const QString &password);
 
 private:
-    QString      m_dbPath;
-    QString      m_connectionName;
-    QSqlDatabase m_db;
+    QVariantMap fetchMemberBy(const QString &column, const QVariant &value);
+
+private:
+    QString       m_dbPath;
+    QString       m_connectionName;
+    QSqlDatabase  m_db;
 };
 
 #endif // MEMBERDATABASEMANAGER_H

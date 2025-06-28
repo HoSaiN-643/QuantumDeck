@@ -11,7 +11,7 @@ Login::Login(Player& player, Client *client, QWidget *parent)
     ui(new Ui::Login),
     player(player),
     client(client),
-    menuWindow(nullptr)
+    menuWindow(new MainMenu(player,client))
 {
     ui->setupUi(this);
     ui->Login_Btn->setEnabled(false);
@@ -20,7 +20,7 @@ Login::Login(Player& player, Client *client, QWidget *parent)
     connect(ui->Log_Uname_Radio, &QRadioButton::clicked, this, &Login::Update_Login_Btn);
     connect(ui->UE_text, &QTextEdit::textChanged, this, &Login::Update_Login_Btn);
     connect(ui->Pwd_text, &QTextEdit::textChanged, this, &Login::Update_Login_Btn);
-
+    connect(client,&Client::SuccesFull_LogIn,this,&Login::On_Succesful_Login);
 
 }
 
@@ -75,7 +75,8 @@ void Login::on_Login_Btn_clicked()
 
 void Login::On_Succesful_Login()
 {
-    this->close();
-    menuWindow = new MainMenu(player,client);
+
+ this->close();
     menuWindow->show();
+
 }

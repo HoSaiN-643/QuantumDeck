@@ -53,34 +53,27 @@ void Signup::OnSuccesfullSignUp()
 
 void Signup::on_SignUp_Btn_clicked()
 {
-    QString firstName = ui->First_Name_Text->toPlainText().trimmed();
-    QString lastName = ui->Last_Name_Text->toPlainText().trimmed();
-    QString phone = ui->Phone_Text->toPlainText().trimmed();
-    QString email = ui->Email_Text->toPlainText().trimmed();
-    QString username = ui->Uname_Text->toPlainText().trimmed();
-    QString password = ui->Pwd_text->toPlainText().trimmed();
+    QString firstName       = ui->First_Name_Text->toPlainText().trimmed();
+    QString lastName        = ui->Last_Name_Text->toPlainText().trimmed();
+    QString email           = ui->Email_Text->toPlainText().trimmed();
+    QString phone           = ui->Phone_Text->toPlainText().trimmed();
+    QString username        = ui->Uname_Text->toPlainText().trimmed();
+    QString password        = ui->Pwd_text->toPlainText().trimmed();
     QString confirmPassword = ui->Confirm_Pwd_text->toPlainText().trimmed();
 
-    QStringList errors;
+    // … اعتبارسنجی …
 
-    if (auto err = InputValidator::validateName(firstName, "First name"); !err.isEmpty()) errors << err;
-    if (auto err = InputValidator::validateName(lastName, "Last name"); !err.isEmpty()) errors << err;
-    if (auto err = InputValidator::validatePhone(phone); !err.isEmpty()) errors << "Phone: " + err;
-    if (auto err = InputValidator::validateEmail(email); !err.isEmpty()) errors << "Email: " + err;
-    if (auto err = InputValidator::validateUsername(username); !err.isEmpty()) errors << err;
-    if (auto err = InputValidator::validatePassword(password); !err.isEmpty()) errors << "Password: " + err;
-    if (password != confirmPassword) errors << "Passwords do not match.";
-
-    if (!errors.isEmpty()) {
-        QMessageBox::warning(this, "Please fix the following errors", errors.join("\n"));
-        return;
-    }
-
-    // موفقیت، ساخت پیام
+    // ساخت پیام با ترتیب [first][last][email][phone][username][password]
     QString data = QString("S[%1][%2][%3][%4][%5][%6]")
-                       .arg(firstName, lastName, phone, username, email, password);
+                       .arg(firstName,
+                            lastName,
+                            email,
+                            phone,
+                            username,
+                            password);
     client->WriteToServer(data);
     qDebug() << "Send sign up request to server :" << data;
 }
+
 
 

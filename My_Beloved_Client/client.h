@@ -35,6 +35,7 @@ private slots:
     void OnReadyRead();
 signals :
     void SuccesFullSignUp();
+    void SuccesFull_LogIn();
 
 private:
     QTcpSocket *m_socket;
