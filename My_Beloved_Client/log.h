@@ -2,9 +2,11 @@
 #define LOG_H
 
 #include <QMainWindow>
+#include "player.h"
+
 namespace Ui { class Log; }
 
-// فقط اعلام
+// پیش‌اظهاری کلاس‌ها
 class Client;
 class Login;
 class Signup;
@@ -14,7 +16,7 @@ class Log : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit Log(Client *client, QWidget *parent = nullptr);
+    explicit Log(Player& player, Client *client, QWidget *parent = nullptr);
     ~Log();
 
     void Show();

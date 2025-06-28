@@ -1,43 +1,40 @@
 #include "log.h"
 #include "ui_log.h"
+#include "player.h"
 #include "login.h"
 #include "signup.h"
 
-Log::Log(Client *client, QWidget *parent)
+Log::Log(Player& player, Client *client, QWidget *parent)
     : QMainWindow(parent),
-    ui(new Ui::Log),
-    client(client),
-    l(new Login(client, this)),
-    s(new Signup(client, this))
+      ui(new Ui::Log),
+      client(client),
+      l(new Login(player, client, this)),
+      s(new Signup(player, client, this))
 {
     ui->setupUi(this);
-    connect(ui->Login_Btn,&QPushButton::clicked,this,&Log::on_Login_Btn_clicked);
-    // connect(ui->Signup_btn,&QPushButton::clicked,this,&Log::on_Signup_btn_clicked);
+    connect(ui->Login_Btn, &QPushButton::clicked, this, &Log::on_Login_Btn_clicked);
+    connect(ui->Signup_btn, &QPushButton::clicked, this, &Log::on_Signup_btn_clicked);
 }
 
 Log::~Log()
 {
     delete ui;
-    // l و s به عنوان child پاک می‌شوند
+    // l و s به عنوان فرزند به طور خودکار حذف می‌شوند
 }
 
 void Log::Show()
 {
-    this->show();   // قبلاً اشتباه اینجا فراخوانی Show می‌شد که recursion ایجاد می‌کرد
+    this->show();
 }
 
 void Log::on_Login_Btn_clicked()
 {
-      this->close();
+    this->close();
     l->show();
-
-
 }
 
 void Log::on_Signup_btn_clicked()
 {
     this->close();
     s->show();
-
-
 }

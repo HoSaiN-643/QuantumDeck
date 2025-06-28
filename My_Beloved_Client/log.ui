@@ -81,7 +81,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>Log in</string>
+        <string>Log in</</string>
        </property>
       </widget>
       <widget class="QPushButton" name="Signup_btn">
