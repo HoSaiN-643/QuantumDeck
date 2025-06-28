@@ -3,9 +3,10 @@
 #include "client.h"
 #include <QMessageBox>
 
-Login::Login(Client *client, QWidget *parent)
+Login::Login(Player& player, Client *client, QWidget *parent)
     : QMainWindow(parent),
     ui(new Ui::Login),
+    player(player),
     client(client)
 {
     ui->setupUi(this);

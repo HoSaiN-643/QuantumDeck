@@ -4,6 +4,7 @@
 #include <QMainWindow>
 namespace Ui { class Login; }
 class Client;
+class Mainmenu;
 
 class Login : public QMainWindow
 {
@@ -22,6 +23,8 @@ private slots:
 private:
     Ui::Login *ui;
     Client     *client;
+    Mainmenu* menuWindow;
+
 };
 
 #endif // LOGIN_H

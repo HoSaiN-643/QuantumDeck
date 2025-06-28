@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+class Client;
+
 namespace Ui {
 class History;
 }
@@ -12,11 +14,12 @@ class History : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit History(QWidget *parent = nullptr);
+    explicit History(Client* client,QWidget *parent = nullptr);
     ~History();
 
 private:
     Ui::History *ui;
+    Client* client;
 };
 
 #endif // HISTORY_H

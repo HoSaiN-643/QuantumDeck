@@ -3,9 +3,11 @@
 
 #include <QObject>
 #include <QHostAddress>
+#include "player.h"
+
 
 class QTcpSocket;
-class Player;
+
 
 class Client : public QObject
 {
@@ -15,7 +17,6 @@ public:
     explicit Client(QObject *parent = nullptr);
     ~Client();
 
-    // این متد دقیقاً اسمش مثل شماست
     void ConnectToServer(const QHostAddress &host, quint16 port);
     void DisconnectFromServer();
     void WriteToServer(const QString& data);
@@ -33,9 +34,7 @@ private slots:
 
 private:
     QTcpSocket *m_socket;
-    Player* player;
-
-
+    Player& player;
 };
 
 #endif // CLIENT_H

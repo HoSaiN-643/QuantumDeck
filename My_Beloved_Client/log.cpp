@@ -3,17 +3,19 @@
 #include "login.h"
 #include "signup.h"
 
-Log::Log(Client *client, QWidget *parent)
+Log::Log(Player& player, Client *client, QWidget *parent)
     : QMainWindow(parent),
     ui(new Ui::Log),
+    player(player),
     client(client),
-    l(new Login(client, this)),
-    s(new Signup(client, this))
+    l(new Login(player, client, this)),
+    s(new Signup(player, client, this))
 {
     ui->setupUi(this);
-    connect(ui->Login_Btn,&QPushButton::clicked,this,&Log::on_Login_Btn_clicked);
-    // connect(ui->Signup_btn,&QPushButton::clicked,this,&Log::on_Signup_btn_clicked);
+    connect(ui->Login_Btn,  &QPushButton::clicked, this, &Log::on_Login_Btn_clicked);
+    // connect(ui->Signup_btn, &QPushButton::clicked, this, &Log::on_Signup_btn_clicked);
 }
+
 
 Log::~Log()
 {

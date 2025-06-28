@@ -6,19 +6,18 @@
 #include <QMessageBox>
 #include <QDebug>
 
-Connect::Connect(Client *client, QWidget *parent)
+Connect::Connect(Player& player, Client *client, QWidget *parent)
     : QMainWindow(parent),
     ui(new Ui::connect),
+    player(player),     // توجه کن! رفرنس رو اینجا ست کن
     client(client),
-    logWindow(new Log(client, this))
+    logWindow(new Log(player, client, this))
 {
     ui->setupUi(this);
-
-    connect(client, &Client::ConnectedToServer,
-            this,   &Connect::OnConnected);
-    connect(client, &Client::ErrorOccurred,
-            this,   &Connect::OnErrorOccurred);
+    connect(client, &Client::ConnectedToServer, this, &Connect::OnConnected);
+    connect(client, &Client::ErrorOccurred, this, &Connect::OnErrorOccurred);
 }
+
 
 Connect::~Connect()
 {

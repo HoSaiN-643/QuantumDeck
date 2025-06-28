@@ -1,9 +1,10 @@
 #include "change_profile.h"
 #include "ui_change_profile.h"
 
-Change_profile::Change_profile(Client* client,QWidget *parent)
+Change_profile::Change_profile(Player& player,Client* client,QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::Change_profile)
+    player(player)
     ,client(client)
 {
     ui->setupUi(this);

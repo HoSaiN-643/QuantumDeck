@@ -3,6 +3,9 @@
 
 #include <QMainWindow>
 
+class Client;
+class Player;
+
 namespace Ui {
 class Change_profile;
 }
@@ -12,11 +15,13 @@ class Change_profile : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit Change_profile(QWidget *parent = nullptr);
+    explicit Change_profile(Player& player,Client* client,QWidget *parent = nullptr);
     ~Change_profile();
 
 private:
     Ui::Change_profile *ui;
+    Client* client;
+    Player& player;
 };
 
 #endif // CHANGE_PROFILE_H

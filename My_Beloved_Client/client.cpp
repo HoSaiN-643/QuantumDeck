@@ -5,19 +5,19 @@
 #include <player.h>
 #include <qmessagebox.h>
 
+
 Client::Client(QObject *parent)
     : QObject(parent),
     m_socket(new QTcpSocket(this))
-    ,player(nullptr)
 {
     connect(m_socket, &QTcpSocket::connected,
             this,     &Client::onConnected);
     connect(m_socket, &QTcpSocket::disconnected,
             this,     &Client::onDisconnected);
-    connect(m_socket,
-            QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::errorOccurred),
-            this, &Client::onError);
-    connect(m_socket,&QTcpSocket::readyRead,this,&Client::OnReadyRead);
+    connect(m_socket, QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::errorOccurred),
+            this,     &Client::onError);
+    connect(m_socket, &QTcpSocket::readyRead,
+            this,     &Client::OnReadyRead);
 }
 
 Client::~Client()
@@ -92,7 +92,7 @@ void Client::OnReadyRead()
 
         if(fields[0] == "OK") {
             QMessageBox::information(nullptr,"Welcome!!","Successfully logined");
-            player = new Player(fields[2],fields[3],fields[4],fields[5],fields[6],fields[7]);
+            player.SetInfo(fields[2],fields[3],fields[4],fields[5],fields[6],fields[7]);
             //we will add history data soon;
             return;
 

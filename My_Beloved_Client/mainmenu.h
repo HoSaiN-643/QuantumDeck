@@ -5,6 +5,8 @@
 class History;
 class Change_profile;
 class Choose_mode;
+class Client;
+class Player;
 
 namespace Ui {
 class MainMenu;
@@ -15,11 +17,20 @@ class MainMenu : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainMenu(QWidget *parent = nullptr);
+    explicit MainMenu(Player& player,Client* client,QWidget *parent = nullptr);
     ~MainMenu();
+
+private slots:
+    void on_Choose_Mode_Btn_clicked();
+
+    void on_History_Btn_clicked();
+
+    void on_Change_prof_Btn_clicked();
 
 private:
     Ui::MainMenu *ui;
+    Client* client;
+    Player& player;
     History* historyWindow;
     Change_profile* Change_profile_Window;
     Choose_mode* Choose_mode_Window;

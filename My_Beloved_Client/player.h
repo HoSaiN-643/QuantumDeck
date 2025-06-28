@@ -2,19 +2,11 @@
 #define PLAYER_H
 
 #include <QString>
-#include <QJsonObject>
-#include <QRegularExpression>
 
 class Player
 {
 public:
-    // ctor شش‌پارامتری
-    explicit Player(const QString &firstname,
-                    const QString &lastname,
-                    const QString &email,
-                    const QString &phone,
-                    const QString &username,
-                    const QString &password);
+    explicit Player(); // سازنده پیشفرض
 
     ~Player() = default;
 
@@ -36,17 +28,13 @@ public:
 
     QString fullName() const;
 
+    void SetInfo(const QString &firstname,
+                 const QString &lastname,
+                 const QString &email,
+                 const QString &phone,
+                 const QString &username,
+                 const QString &password);
 
-
-
-
-
-    // به JSON تبدیل کند
-    QJsonObject toJson() const;
-    // از JSON بسازد
-    static Player fromJson(const QJsonObject &obj);
-
-    // اپراتورهای مقایسه
     bool operator==(const Player &other) const;
     bool operator!=(const Player &other) const { return !(*this == other); }
 
