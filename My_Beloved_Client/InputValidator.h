@@ -1,18 +1,16 @@
-#ifndef INPUTVALIDATOR_H
-#define INPUTVALIDATOR_H
-
+#pragma once
 #include <QString>
 #include <QRegularExpression>
+#include <QStringList>
 
-class InputValidator {
+class InputValidator
+{
 public:
-    static const QStringList commonPasswords;
-
     static QString validateEmail(const QString& email);
     static QString validatePhone(const QString& phone);
+    static QString validateUsername(const QString& username);
     static QString validatePassword(const QString& password);
-    static QString validateAddress(const QString& address);
-    static QString validatePort(const QString& port);
+    static QString validateName(const QString& name, const QString& fieldName);
+    static const QStringList commonPasswords;
 };
 
-#endif // INPUTVALIDATOR_H

@@ -4,7 +4,7 @@
 Change_profile::Change_profile(Player& player,Client* client,QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::Change_profile)
-    player(player)
+    ,player(player)
     ,client(client)
 {
     ui->setupUi(this);

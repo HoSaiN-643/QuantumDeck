@@ -7,6 +7,7 @@
 
 
 class QTcpSocket;
+class Login;
 
 
 class Client : public QObject
@@ -21,6 +22,7 @@ public:
     void DisconnectFromServer();
     void WriteToServer(const QString& data);
 
+    Player &GetPlayer();
 signals:
     void ConnectedToServer();
     void DisconnectedFromServer();
@@ -31,10 +33,13 @@ private slots:
     void onDisconnected();
     void onError(QAbstractSocket::SocketError socketError);
     void OnReadyRead();
+signals :
+    void SuccesFullSignUp();
 
 private:
     QTcpSocket *m_socket;
-    Player& player;
+    Player player;
+    Login* loginWindow;
 };
 
 #endif // CLIENT_H

@@ -2,29 +2,30 @@
 #define LOGIN_H
 
 #include <QMainWindow>
+#include "mainmenu.h"
 namespace Ui { class Login; }
 class Client;
-class Mainmenu;
+class MainMenu;
+class Player;
 
 class Login : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit Login(Client *client, QWidget *parent = nullptr);
+    explicit Login(Player& player, Client *client, QWidget *parent = nullptr);
     ~Login();
 
 private slots:
-
     void Update_Login_Btn();
-
     void on_Login_Btn_clicked();
+    void On_Succesful_Login();
 
 private:
     Ui::Login *ui;
     Client     *client;
-    Mainmenu* menuWindow;
-
+    Player&    player;
+    MainMenu*  menuWindow;
 };
 
 #endif // LOGIN_H

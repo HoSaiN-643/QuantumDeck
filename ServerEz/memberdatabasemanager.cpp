@@ -103,29 +103,28 @@ bool MemberDatabaseManager::addMember(QTcpSocket* client,
 {
     if (!m_db.isOpen()) {
         qWarning() << "MemberDB: addMember called but DB is not open!";
-        client->write("S[FAIL][Database not open]");
+        client->write("S[ERROR][Database not open]");
         return false;
     }
 
-    // بررسی موجودیت یوزرنیم یا ایمیل
+    // Check for duplicate username or email
     {
         QSqlQuery chk(m_db);
-        chk.prepare("SELECT COUNT(*) FROM members "
-                    "WHERE username = :u OR email = :e;");
+        chk.prepare("SELECT COUNT(*) FROM members WHERE username = :u OR email = :e;");
         chk.bindValue(":u", username);
         chk.bindValue(":e", email);
         if (!chk.exec() || !chk.next()) {
             qWarning() << "MemberDB: check existing failed:" << chk.lastError().text();
-            client->write("S[FAIL][Check existing failed.]");
+            client->write("S[ERROR][Database query error]");
             return false;
         }
         if (chk.value(0).toInt() > 0) {
-            client->write("S[FAIL][Username or email already exists.]");
+            client->write("S[ERROR][Username or email already exists.]");
             return false;
         }
     }
 
-    // درج رکورد جدید
+    // Insert new member
     QSqlQuery ins(m_db);
     ins.prepare(R"(
         INSERT INTO members
@@ -142,14 +141,15 @@ bool MemberDatabaseManager::addMember(QTcpSocket* client,
 
     if (!ins.exec()) {
         qWarning() << "MemberDB: insert failed:" << ins.lastError().text();
-        client->write("S[FAIL][Insert failed.]");
+        client->write("S[ERROR][Database insert failed]");
         return false;
     }
 
-    client->write("S[OK][Successfully signed up]");
+    client->write("S[OK][Signup successful]");
     qDebug() << "MemberDB: Member added:" << username;
     return true;
 }
+
 
 // حذف عضو در صورت تطابق نام‌کاربری و رمز
 bool MemberDatabaseManager::removeMemberIfCredentialsMatch(
@@ -172,43 +172,73 @@ bool MemberDatabaseManager::removeMemberIfCredentialsMatch(
     return (del.numRowsAffected() > 0);
 }
 
-// به‌روز‌رسانی یکی از ستون‌ها بر اساس شمارهٔ فیلد
-bool MemberDatabaseManager::updateMemberField(int fieldType,
-                                              const QString &currentUsername,
-                                              const QString &newValue)
+bool MemberDatabaseManager::updateMemberAllFields(QTcpSocket* socket,const QString &oldUsername, const QString &firstname,
+                                                  const QString &lastname, const QString &phone,
+                                                  const QString &email, const QString &newUsername, const QString &password)
 {
     if (!m_db.isOpen()) {
-        qWarning() << "MemberDB: updateMemberField called but DB is not open!";
+        qWarning() << "MemberDB: updateMemberAllFields called but DB is not open!";
+        socket->write("C[CF][ERROR][Database is not open]");
         return false;
     }
 
-    QString column;
-    switch (fieldType) {
-    case 1: column = "username"; break;
-    case 2: column = "email";    break;
-    case 3: column = "password"; break;
-    case 4: column = "firstname";break;
-    case 5: column = "lastname"; break;
-    case 6: column = "phone";    break;
-    default:
-        qWarning() << "MemberDB: invalid fieldType:" << fieldType;
-        return false;
-    }
-
+    // گام ۱: بررسی وجود عضو
     QSqlQuery q(m_db);
-    const QString stmt = QString(
-                             "UPDATE members SET %1 = :val WHERE username = :u;"
-                             ).arg(column);
-    q.prepare(stmt);
-    q.bindValue(":val", newValue);
-    q.bindValue(":u",   currentUsername);
-
-    if (!q.exec()) {
-        qWarning() << "MemberDB: update failed on" << column << ":" << q.lastError().text();
+    q.prepare("SELECT password FROM members WHERE username = :u");
+    q.bindValue(":u", oldUsername);
+    if (!q.exec() || !q.next()) {
+        qWarning() << "MemberDB: user not found:" << oldUsername;
+        socket->write("C[CF][ERROR][User not found]");
         return false;
     }
-    return (q.numRowsAffected() > 0);
+
+    // گام ۲: اعتبارسنجی رمز عبور
+    QString storedPassword = q.value(0).toString();
+    if (storedPassword != password) {
+        qWarning() << "MemberDB: password incorrect for user:" << oldUsername;
+        socket->write("C[CF][WRONG][Incorrect password]");
+        return false;
+    }
+
+    // گام ۳: آپدیت رکورد
+    QSqlQuery updateQ(m_db);
+    updateQ.prepare(
+        "UPDATE members SET "
+        "firstname = :firstname, "
+        "lastname  = :lastname, "
+        "phone     = :phone, "
+        "email     = :email, "
+        "username  = :newUsername, "
+        "password  = :newPassword "
+        "WHERE username = :oldUsername"
+        );
+    updateQ.bindValue(":firstname",  firstname);
+    updateQ.bindValue(":lastname",   lastname);
+    updateQ.bindValue(":phone",      phone);
+    updateQ.bindValue(":email",      email);
+    updateQ.bindValue(":newUsername", newUsername);
+    updateQ.bindValue(":newPassword", password);
+    updateQ.bindValue(":oldUsername", oldUsername);
+
+    if (!updateQ.exec()) {
+        qWarning() << "MemberDB: update failed:" << updateQ.lastError().text();
+        socket->write("C[CF][ERROR][Profile update failed. Please try again later.]");
+        return false;
+    }
+
+    if (updateQ.numRowsAffected() > 0) {
+        socket->write("C[CF][OK][Profile updated][Your profile was updated successfully.]");
+        return true;
+    } else {
+        // کاربر وجود داشت ولی هیچ تغییری در اطلاعات حاصل نشد
+        socket->write("C[CF][INFO][No changes][No information was changed in your profile.]");
+        return false;
+    }
 }
+
+
+
+
 
 // واکشی عضو بر اساس username
 QVariantMap MemberDatabaseManager::GetMemberByUsername(const QString &username)

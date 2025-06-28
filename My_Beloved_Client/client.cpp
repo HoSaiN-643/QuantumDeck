@@ -4,11 +4,14 @@
 #include <QDebug>
 #include <player.h>
 #include <qmessagebox.h>
+#include <login.h>
 
 
 Client::Client(QObject *parent)
     : QObject(parent),
     m_socket(new QTcpSocket(this))
+    ,loginWindow( new Login(player,this))
+
 {
     connect(m_socket, &QTcpSocket::connected,
             this,     &Client::onConnected);
@@ -72,7 +75,6 @@ void Client::OnReadyRead()
     char cmd = raw.at(0);
     QString payload = QString::fromUtf8(raw.mid(1));
 
-
     auto extractFields = [&](const QString& s)->QStringList {
         QStringList fields;
         int pos = 0;
@@ -88,49 +90,49 @@ void Client::OnReadyRead()
 
     QStringList fields = extractFields(payload);
 
-    if(cmd == 'L') {
-
-        if(fields[0] == "OK") {
-            QMessageBox::information(nullptr,"Welcome!!","Successfully logined");
-            player.SetInfo(fields[2],fields[3],fields[4],fields[5],fields[6],fields[7]);
-            //we will add history data soon;
-            return;
-
-        }
-        else {
-            QMessageBox::information(nullptr,fields[0],fields[1]);
-            return;
-        }
-    }
-    else if(cmd == 'S') {
-
-        if(fields.size() != 2) {
-         qDebug() << "Bad format recieved for signup";
-            return;
-        }
-        QMessageBox::information(nullptr,fields[0],fields[1]);
-        if(fields[0] == "OK") {
-            //تغییر پنجره به لاگین
+    if (cmd == 'L') { // LOGIN
+        if (fields.isEmpty()) return;
+        if (fields[0] == "OK") {
+            // fields: [OK][msg][fn][ln][em][ph][un][pw]
+            if (fields.size() < 8) {
+                QMessageBox::warning(nullptr, "Login", "Login response bad format!");
+                return;
+            }
+            QMessageBox::information(nullptr, "Welcome!", "Successfully logined");
+            player.SetInfo(fields[2], fields[3], fields[4], fields[5], fields[6], fields[7]);
+        } else {
+            if (fields.size() < 2) return;
+            QMessageBox::warning(nullptr, fields[0], fields[1]);
         }
     }
-    else if(cmd == 'R') {
-        if(fields.size() != 3 && fields.size() != 2) {
-            qDebug() << "Bad format recieved for signup";
-            return;
-        }
-        if(fields[0] == "OK") {
-            QMessageBox::information(nullptr,"Succesfull", fields[1] + "  : " + fields[2]);
+    else if (cmd == 'S') { // SIGNUP
+        if (fields.size() < 2) return;
+        if (fields[0] == "OK") {
+            QMessageBox::information(nullptr, "Signup", fields[1]);
+            emit SuccesFullSignUp();
+            loginWindow->show();
 
+        } else {
+            QMessageBox::warning(nullptr, fields[0], fields[1]);
         }
-        else {
-              QMessageBox::information(nullptr,fields[0], fields[1] );
-        }
-        return;
-
     }
-    else if(cmd == 'X') {
-         qDebug() << "Bad data type recieaved";
-         QMessageBox::information(nullptr,fields[0], fields[1] );
+    else if (cmd == 'R') { // RECOVER
+        if (fields.isEmpty()) return;
+        if (fields[0] == "OK") {
+            if (fields.size() < 3) return;
+            QMessageBox::information(nullptr, "Password found", QString("%1 : %2").arg(fields[1], fields[2]));
+        } else {
+            if (fields.size() < 2) return;
+            QMessageBox::warning(nullptr, fields[0], fields[1]);
+        }
     }
-
+    else if (cmd == 'X') {
+        if (fields.size() < 2) return;
+        QMessageBox::warning(nullptr, fields[0], fields[1]);
+    }
 }
+
+Player& Client::GetPlayer() {
+    return player;
+}
+

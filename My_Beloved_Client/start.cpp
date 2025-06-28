@@ -5,7 +5,7 @@
 Start::Start(QObject *parent)
     : QObject(parent),
     c(new Client(this)),
-    window(new Connect(c))
+    window(new Connect(c->GetPlayer(),c))
 {
     window->show();
 }

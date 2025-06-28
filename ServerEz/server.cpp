@@ -54,18 +54,13 @@ void SERVER::OnNewConnection()
 void SERVER::OnReadyRead()
 {
     QTcpSocket* client = qobject_cast<QTcpSocket*>(sender());
-    if (!client) {
-        qWarning() << "OnReadyRead: sender is not a QTcpSocket";
-        return;
-    }
+    if (!client) return;
 
     QByteArray raw = client->readAll();
-    if (raw.isEmpty())
-        return;
+    if (raw.isEmpty()) return;
 
     char cmd = raw.at(0);
     QString payload = QString::fromUtf8(raw.mid(1));
-
 
     auto extractFields = [&](const QString& s)->QStringList {
         QStringList fields;
@@ -80,108 +75,99 @@ void SERVER::OnReadyRead()
         return fields;
     };
 
-
-    if (cmd == 'L') {
-
+    if (cmd == 'L') { // LOGIN
         QStringList f = extractFields(payload);
         if (f.size() != 3) {
             client->write("L[ERROR][BadFormat]");
-            qWarning() << "Login: bad format:" << payload;
             return;
         }
-        QString type = f.at(0).toUpper();
-        QString id   = f.at(1);
-        QString pwd  = f.at(2);
-        QString uname;
+        QString type = f[0].toUpper();
+        QString id   = f[1];
+        QString pwd  = f[2];
         QVariantMap member;
-        if (type == QStringLiteral("E")) {
+        if (type == "E")
             member = db.GetMemberByEmail(id);
-            uname = member.value("username").toString();
-
-            qDebug() << "Login with Email:" << id;
-        }
-        else if (type == QStringLiteral("U")) {
+        else if (type == "U")
             member = db.GetMemberByUsername(id);
-            qDebug() << "Login with Username:" << id;
-            uname = member.value("username").toString();
-
-        }
         else {
             client->write("L[ERROR][BadLoginType]");
-            qWarning() << "Login: bad login type:" << type;
             return;
         }
-
         if (member.isEmpty()) {
             client->write("L[FAIL][Member not found]");
-            qDebug() << "Member not found for" << id;
         }
-        else if (member.value("password") != pwd) {
+        else if (member.value("password").toString() != pwd) {
             client->write("L[WRONG][Wrong password]");
-            qDebug() << "Wrong password for" << id;
         }
         else {
+            // همه فیلدها را بفرست
             QString data = QString(
-                   "L[OK][successfull login]"
-                     "[%1][%2][%3][%4][%5][%6]"
-                     ).arg(
-                    member.value("firstname").toString(),
-                    member.value("lastname").toString(),
-                    member.value("email").toString(),
-                    member.value("phone").toString(),
-                    member.value("username").toString(),
-                    member.value("password").toString()
+                               "L[OK][successfull login]"
+                               "[%1][%2][%3][%4][%5][%6]"
+                               ).arg(
+                                   member.value("firstname").toString(),
+                                   member.value("lastname").toString(),
+                                   member.value("email").toString(),
+                                   member.value("phone").toString(),
+                                   member.value("username").toString(),
+                                   member.value("password").toString()
                                    );
             client->write(data.toUtf8());
-            clients[client] = uname;
-            qDebug() << "Login successful for" << id;
+            clients[client] = member.value("username").toString();
         }
     }
-    else if (cmd == 'S') {
-
+    else if (cmd == 'S') { // SIGNUP
         QStringList f = extractFields(payload);
         if (f.size() != 6) {
             client->write("S[ERROR][BadFormat]");
-            qWarning() << "Signup: bad format:" << payload;
             return;
         }
-        QString FirstName   = f.at(0);
-        QString LastName    = f.at(1);
-        QString PhoneNumber = f.at(2);
-        QString uname       = f.at(3);
-        QString email       = f.at(4);
-        QString pwd_        = f.at(5);
-
-
-        db.addMember(client, uname, email, pwd_, FirstName, LastName, PhoneNumber);
-        qDebug() << "Signup request for" << uname;
+        QString FirstName   = f[0];
+        QString LastName    = f[1];
+        QString PhoneNumber = f[2];
+        QString uname       = f[3];
+        QString email       = f[4];
+        QString pwd_        = f[5];
+        // چک کن که یوزرنیم و ایمیل تکراری نباشه، بعد جواب مناسب بده!
+        if (db.GetMemberByUsername(uname).isEmpty() && db.GetMemberByEmail(email).isEmpty()) {
+            db.addMember(client, uname, email, pwd_, FirstName, LastName, PhoneNumber);
+            client->write("S[OK][Signup successful]");
+        } else {
+            client->write("S[ERROR][Username or Email Taken]");
+        }
     }
-    else if (cmd == 'R') {
-
+    else if (cmd == 'R') { // RECOVER
         QStringList f = extractFields(payload);
         if (f.size() != 1) {
             client->write("R[ERROR][BadFormat]");
-            qWarning() << "Recover: bad format:" << payload;
             return;
         }
-        QString phone = f.at(0);
+        QString phone = f[0];
         QVariantMap member = db.GetMemberByPhone(phone);
         if (member.isEmpty()) {
             client->write("R[WRONG][Phone not registered]");
-            qDebug() << "Recover: phone not found:" << phone;
         } else {
-            QByteArray resp = "R[OK][Password recovered]["
-                              + member.value("password").toByteArray()
-                              + "]";
-            client->write(resp);
-            qDebug() << "Recover: password sent for" << phone;
+            QString resp = QString("R[OK][Password recovered][%1]").arg(member.value("password").toString());
+            client->write(resp.toUtf8());
         }
+    }
+    else if(cmd == 'C') {
+       QStringList f = extractFields(payload);
+        if(f[0] == "CF") { // updating profile;
+           if(f.size() != 8) {
+               client->write("C[CF][ERROR][Bad format recieved]");
+               qDebug() << "Bad format Recieved";
+           }
+           db.updateMemberAllFields(client,f[1],f[2],f[3],f[4],f[5],f[6],f[7]);
+
+        }
+
     }
     else {
         client->write("X[ERROR][UnknownCommand]");
-        qWarning() << "Unknown command:" << cmd << "payload:" << payload;
     }
 }
+
 
 void SERVER::OnClientDisconnection(QTcpSocket* client)
 {

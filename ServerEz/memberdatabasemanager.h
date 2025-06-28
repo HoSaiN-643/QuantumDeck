@@ -31,9 +31,13 @@ public:
     bool removeMemberIfCredentialsMatch(const QString &username,
                                         const QString &password);
 
-    bool updateMemberField(int fieldType,
-                           const QString &currentUsername,
-                           const QString &newValue);
+    bool updateMemberAllFields(QTcpSocket* socket,const QString &oldUsername,
+                               const QString &firstname,
+                               const QString &lastname,
+                               const QString &phone,
+                               const QString &email,
+                               const QString &newUsername,
+                               const QString &password);
 
     QVariantMap GetMemberByUsername(const QString &username);
     QVariantMap GetMemberByEmail(const QString &email);

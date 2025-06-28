@@ -8,13 +8,14 @@ namespace Ui { class Log; }
 class Client;
 class Login;
 class Signup;
+class Player;
 
 class Log : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit Log(Client *client, QWidget *parent = nullptr);
+    explicit Log(Player& player,Client *client, QWidget *parent = nullptr);
     ~Log();
 
     void Show();
@@ -28,6 +29,7 @@ private:
     Client   *client;
     Login    *l;
     Signup   *s;
+    Player& player;
 };
 
 #endif // LOG_H

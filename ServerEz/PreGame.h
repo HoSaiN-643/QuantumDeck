@@ -1,12 +1,12 @@
-#ifndef GAME_H
-#define GAME_H
+#ifndef PREGAME_H
+#define PREGAME_H
 
 #include <QObject>
 #include <card.h>
 #include <QTcpSocket>
 #include <cardmanager.h>
 
-class Game : QObject
+class PreGame : QObject
 {
     Q_OBJECT
     int round;
@@ -18,7 +18,7 @@ class Game : QObject
 
 
 public:
-    Game(int Cnt,QTcpSocket* Player);
+    PreGame(int Cnt,QTcpSocket* Player);
     void AddPlayer(QTcpSocket* p);
     void InCreaseWaitingPlayers()
     {
@@ -26,4 +26,4 @@ public:
     }
 };
 
-#endif // GAME_H
+#endif // PREGAME_H
