@@ -2,6 +2,7 @@
 #define LOGIN_H
 
 #include <QMainWindow>
+
 namespace Ui { class Login; }
 class Client;
 
@@ -14,14 +15,12 @@ public:
     ~Login();
 
 private slots:
-
     void Update_Login_Btn();
-
     void on_Login_Btn_clicked();
 
 private:
     Ui::Login *ui;
-    Client     *client;
+    Client *client;
 };
 
 #endif // LOGIN_H

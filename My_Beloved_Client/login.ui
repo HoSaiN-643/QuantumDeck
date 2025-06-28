@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>ورود به بازی</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -49,6 +49,7 @@
     </item>
     <item row="0" column="2">
      <spacer name="horizontalSpacer_2">
+      < Ascending
       <property name="orientation">
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
@@ -66,7 +67,7 @@
     <item row="0" column="1">
      <widget class="QGroupBox" name="mew">
       <property name="title">
-       <string>GroupBox</string>
+       <string>ورود</string>
       </property>
       <widget class="QLabel" name="UE_Label_2">
        <property name="geometry">
@@ -91,7 +92,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>Password</string>
+        <string>رمز عبور</string>
        </property>
       </widget>
       <widget class="QTextEdit" name="UE_text">
@@ -124,7 +125,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>Login with email</string>
+        <string>ورود با ایمیل</string>
        </property>
       </widget>
       <widget class="QRadioButton" name="Log_Uname_Radio">
@@ -137,7 +138,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>Login with username</string>
+        <string>ورود با نام کاربری</string>
        </property>
       </widget>
       <widget class="QPushButton" name="Login_Btn">
@@ -150,7 +151,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>Log in</string>
+        <string>ورود</string>
        </property>
       </widget>
       <widget class="QPushButton" name="Forgot_Btn">
@@ -163,7 +164,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>I forgot my password</string>
+        <string>رمز عبورم را فراموش کرده‌ام</string>
        </property>
       </widget>
      </widget>
