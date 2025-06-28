@@ -1,25 +1,15 @@
 #include "signup.h"
 #include "ui_signup.h"
-#include "client.h"
-#include <QMessageBox>
-#include <QRegularExpression>
 
-Signup::Signup(Client *client, QWidget *parent)
-    : QMainWindow(parent),
-      ui(new Ui::Signup),
-      client(client)
+Signup::Signup(Client* client, QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::Signup)
+    , client(client)
 {
     ui->setupUi(this);
-    ui->SignUp_Btn->setEnabled(false);
 
-    connect(ui->First_Name_Text, &QTextEdit::textChanged, this, &Signup::checkFields);
-    connect(ui->Last_Name_Text, &QTextEdit::textChanged, this, &Signup::checkFields);
-    connect(ui->Phone_Text, &QTextEdit::textChanged, this, &Signup::checkFields);
-    connect(ui->Email_Text, &QTextEdit::textChanged, this, &Signup::checkFields);
-    connect(ui->Uname_Text, &QTextEdit::textChanged, this, &Signup::checkFields);
-    connect(ui->Pwd_text, &QTextEdit::textChanged, this, &Signup::checkFields);
-    connect(ui->Confirm_Pwd_text, &QTextEdit::textChanged, this, &Signup::checkFields);
-    connect(ui->SignUp_Btn, &QPushButton::clicked, this, &Signup::on_SignUp_Btn_clicked);
+    // اتصال دکمه ثبت‌نام
+    connect(ui->signup_button, &QPushButton::clicked, this, &Signup::onSignupButtonClicked);
 }
 
 Signup::~Signup()
@@ -27,53 +17,91 @@ Signup::~Signup()
     delete ui;
 }
 
-void Signup::checkFields()
+void Signup::onSignupButtonClicked()
 {
-    bool allFilled = true;
-    if (ui->First_Name_Text->toPlainText().isEmpty()) allFilled = false;
-    if (ui->Last_Name_Text->toPlainText().isEmpty()) allFilled = false;
-    if (ui->Phone_Text->toPlainText().isEmpty()) allFilled = false;
-    if (ui->Email_Text->toPlainText().isEmpty()) allFilled = false;
-    if (ui->Uname_Text->toPlainText().isEmpty()) allFilled = false;
-    if (ui->Pwd_text->toPlainText().isEmpty()) allFilled = false;
-    if (ui->Confirm_Pwd_text->toPlainText().isEmpty()) allFilled = false;
-    ui->SignUp_Btn->setEnabled(allFilled);
-}
+    QString firstname = ui->firstname_lineEdit->text().trimmed();
+    QString lastname = ui->lastname_lineEdit->text().trimmed();
+    QString email = ui->email_lineEdit->text().trimmed();
+    QString phone = ui->phone_lineEdit->text().trimmed();
+    QString username = ui->username_lineEdit->text().trimmed();
+    QString password = ui->password_lineEdit->text();
+    QString confirm_password = ui->confirm_password_lineEdit->text();
 
-void Signup::on_SignUp_Btn_clicked()
-{
-    QString first = ui->First_Name_Text->toPlainText().trimmed();
-    QString last = ui->Last_Name_Text->toPlainText().trimmed();
-    QString phone = ui->Phone_Text->toPlainText().trimmed();
-    QString email = ui->Email_Text->toPlainText().trimmed();
-    QString username = ui->Uname_Text->toPlainText().trimmed();
-    QString pwd = ui->Pwd_text->toPlainText().trimmed();
-    QString confirm_pwd = ui->Confirm_Pwd_text->toPlainText().trimmed();
-
-    if (first.isEmpty() || last.isEmpty() || phone.isEmpty() || email.isEmpty() ||
-        username.isEmpty() || pwd.isEmpty() || confirm_pwd.isEmpty()) {
-        QMessageBox::warning(this, "خطا", "تمامی فیلدها باید پر شوند.");
+    // بررسی خالی نبودن فیلدها
+    if (firstname.isEmpty()) {
+        QMessageBox::warning(this, "خطا", "نام نمی‌تواند خالی باشد.");
+        return;
+    }
+    if (lastname.isEmpty()) {
+        QMessageBox::warning(this, "خطا", "نام خانوادگی نمی‌تواند خالی باشد.");
+        return;
+    }
+    if (email.isEmpty()) {
+        QMessageBox::warning(this, "خطا", "ایمیل نمی‌تواند خالی باشد.");
+        return;
+    }
+    if (phone.isEmpty()) {
+        QMessageBox::warning(this, "خطا", "تلفن نمی‌تواند خالی باشد.");
+        return;
+    }
+    if (username.isEmpty()) {
+        QMessageBox::warning(this, "خطا", "نام کاربری نمی‌تواند خالی باشد.");
+        return;
+    }
+    if (password.isEmpty()) {
+        QMessageBox::warning(this, "خطا", "رمز عبور نمی‌تواند خالی باشد.");
         return;
     }
 
-    if (pwd != confirm_pwd) {
-        QMessageBox::warning(this, "خطا", "رمزهای عبور مطابقت ندارند.");
+    // اعتبارسنجی نام و نام خانوادگی
+    if (firstname.length() < 2) {
+        QMessageBox::warning(this, "خطا", "نام باید حداقل ۲ کاراکتر باشد.");
+        return;
+    }
+    if (lastname.length() < 2) {
+        QMessageBox::warning(this, "خطا", "نام خانوادگی باید حداقل ۲ کاراکتر باشد.");
         return;
     }
 
-    QRegularExpression emailRegex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-    if (!emailRegex.match(email).hasMatch()) {
-        QMessageBox::warning(this, "خطا", "فرمت ایمیل نامعتبر است.");
+    // اعتبارسنجی نام کاربری
+    if (username.length() < 5) {
+        QMessageBox::warning(this, "خطا", "نام کاربری باید حداقل ۵ کاراکتر باشد.");
         return;
     }
 
-    QRegularExpression phoneRegex("^\\d{3}\\.\\d{3}\\.\\d{3}\\.\\d{3}$");
-    if (!phoneRegex.match(phone).hasMatch()) {
-        QMessageBox::warning(this, "خطا", "فرمت شماره تلفن باید به صورت 000.000.000.000 باشد.");
+    // اعتبارسنجی ایمیل و تلفن
+    QString error = InputValidator::validateEmail(email);
+    if (!error.isEmpty()) {
+        QMessageBox::warning(this, "خطا", error);
+        return;
+    }
+    error = InputValidator::validatePhone(phone);
+    if (!error.isEmpty()) {
+        QMessageBox::warning(this, "خطا", error);
         return;
     }
 
-    QString data = "S[" + first + "][" + last + "][" + phone + "][" + email + "][" + username + "][" + pwd + "]";
-    client->WriteToServer(data);
-    QMessageBox::information(this, "موفقیت", "درخواست ثبت‌نام ارسال شد.");
+    // اعتبارسنجی رمز عبور
+    error = InputValidator::validatePassword(password);
+    if (!error.isEmpty()) {
+        QMessageBox::warning(this, "خطا", "رمز عبور: " + error);
+        return;
+    }
+    if (password != confirm_password) {
+        QMessageBox::warning(this, "خطا", "رمز عبور و تأیید آن مطابقت ندارند.");
+        return;
+    }
+
+    // ارسال اطلاعات به سرور
+    QString message = QString("S[SIGNUP][%1][%2][%3][%4][%5][%6]")
+                         .arg(firstname)
+                         .arg(lastname)
+                         .arg(email)
+                         .arg(phone)
+                         .arg(username)
+                         .arg(password);
+    client->WriteToServer(message);
+
+    // اطلاع‌رسانی موفقیت
+    QMessageBox::information(this, "موفقیت", "ثبت‌نام با موفقیت انجام شد.");
 }

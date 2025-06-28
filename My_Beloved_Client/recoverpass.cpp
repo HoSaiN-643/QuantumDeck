@@ -1,28 +1,43 @@
 #include "recoverpass.h"
 #include "ui_recoverpass.h"
-#include <QMessageBox>
 
-RecoverPass::RecoverPass(Client* client, QWidget *parent)
+Recoverpass::Recoverpass(Client* client, QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::RecoverPass)
+    , ui(new Ui::Recoverpass)
     , client(client)
 {
     ui->setupUi(this);
-    connect(ui->pushButton, &QPushButton::clicked, this, &RecoverPass::on_pushButton_clicked);
+
+    // اتصال دکمه بازیابی
+    connect(ui->recover_button, &QPushButton::clicked, this, &Recoverpass::onRecoverButtonClicked);
 }
 
-RecoverPass::~RecoverPass()
+Recoverpass::~Recoverpass()
 {
     delete ui;
 }
 
-void RecoverPass::on_pushButton_clicked()
+void Recoverpass::onRecoverButtonClicked()
 {
-    QString phone = ui->textEdit->toPlainText().simplified();
-    if (phone.isEmpty() || phone.length() < 10) {
-        QMessageBox::warning(this, "شماره تلفن نامعتبر", "لطفاً یک شماره تلفن معتبر وارد کنید.");
-    } else {
-        client->WriteToServer("R[" + phone + "]");
-        QMessageBox::information(this, "درخواست ارسال شد", "درخواست بازیابی رمز عبور ارسال شد.");
+    QString email = ui->email_lineEdit->text().trimmed();
+
+    // بررسی خالی نبودن ایمیل
+    if (email.isEmpty()) {
+        QMessageBox::warning(this, "خطا", "ایمیل نمی‌تواند خالی باشد.");
+        return;
     }
+
+    // اعتبارسنجی ایمیل
+    QString error = InputValidator::validateEmail(email);
+    if (!error.isEmpty()) {
+        QMessageBox::warning(this, "خطا", error);
+        return;
+    }
+
+    // ارسال درخواست بازیابی به سرور
+    QString message = QString("R[RECOVER][%1]").arg(email);
+    client->WriteToServer(message);
+
+    // اطلاع‌رسانی موفقیت
+    QMessageBox::information(this, "موفقیت", "درخواست بازیابی رمز عبور ارسال شد.");
 }

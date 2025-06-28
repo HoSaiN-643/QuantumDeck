@@ -6,181 +6,49 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>400</width>
+    <height>300</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>ورود به بازی</string>
+   <string>ورود</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="1">
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Orientation::Vertical</enum>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>نام کاربری</string>
       </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Policy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>100</height>
-       </size>
-      </property>
-     </spacer>
+     </widget>
     </item>
-    <item row="0" column="0">
-     <spacer name="horizontalSpacer">
-      <property name="orientation">
-       <enum>Qt::Orientation::Horizontal</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Policy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>200</width>
-        <height>20</height>
-       </size>
-      </property>
-     </spacer>
+    <item>
+     <widget class="QLineEdit" name="username_lineEdit"/>
     </item>
-    <item row="0" column="2">
-     <spacer name="horizontalSpacer_2">
-      < Ascending
-      <property name="orientation">
-       <enum>Qt::Orientation::Horizontal</enum>
+    <item>
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>رمز عبور</string>
       </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Policy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>200</width>
-        <height>20</height>
-       </size>
-      </property>
-     </spacer>
+     </widget>
     </item>
-    <item row="0" column="1">
-     <widget class="QGroupBox" name="mew">
-      <property name="title">
+    <item>
+     <widget class="QLineEdit" name="password_lineEdit">
+      <property name="echoMode">
+       <enum>QLineEdit::Password</enum>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="login_button">
+      <property name="text">
        <string>ورود</string>
       </property>
-      <widget class="QLabel" name="UE_Label_2">
-       <property name="geometry">
-        <rect>
-         <x>20</x>
-         <y>170</y>
-         <width>80</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>NA</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_3">
-       <property name="geometry">
-        <rect>
-         <x>20</x>
-         <y>240</y>
-         <width>80</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>رمز عبور</string>
-       </property>
-      </widget>
-      <widget class="QTextEdit" name="UE_text">
-       <property name="geometry">
-        <rect>
-         <x>140</x>
-         <y>160</y>
-         <width>220</width>
-         <height>30</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QTextEdit" name="Pwd_text">
-       <property name="geometry">
-        <rect>
-         <x>140</x>
-         <y>230</y>
-         <width>220</width>
-         <height>30</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QRadioButton" name="Log_Email_Radio">
-       <property name="geometry">
-        <rect>
-         <x>40</x>
-         <y>110</y>
-         <width>120</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>ورود با ایمیل</string>
-       </property>
-      </widget>
-      <widget class="QRadioButton" name="Log_Uname_Radio">
-       <property name="geometry">
-        <rect>
-         <x>210</x>
-         <y>110</y>
-         <width>140</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>ورود با نام کاربری</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="Login_Btn">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>300</y>
-         <width>350</width>
-         <height>60</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>ورود</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="Forgot_Btn">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>360</y>
-         <width>350</width>
-         <height>60</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>رمز عبورم را فراموش کرده‌ام</string>
-       </property>
-      </widget>
      </widget>
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>800</width>
-     <height>26</height>
-    </rect>
-   </property>
-  </widget>
+  <widget class="QMenuBar" name="menubar"/>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>

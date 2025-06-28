@@ -2,25 +2,28 @@
 #define LOGIN_H
 
 #include <QMainWindow>
+#include <QMessageBox>
+#include "client.h"
+#include "InputValidator.h"
 
-namespace Ui { class Login; }
-class Client;
+namespace Ui {
+class Login;
+}
 
 class Login : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit Login(Client *client, QWidget *parent = nullptr);
+    explicit Login(Client* client, QWidget *parent = nullptr);
     ~Login();
 
 private slots:
-    void Update_Login_Btn();
-    void on_Login_Btn_clicked();
+    void onLoginButtonClicked();
 
 private:
     Ui::Login *ui;
-    Client *client;
+    Client* client;
 };
 
 #endif // LOGIN_H

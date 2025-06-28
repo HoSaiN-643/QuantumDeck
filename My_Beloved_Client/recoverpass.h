@@ -2,26 +2,27 @@
 #define RECOVERPASS_H
 
 #include <QMainWindow>
-
-class Client;
+#include <QMessageBox>
+#include "client.h"
+#include "InputValidator.h"
 
 namespace Ui {
-class RecoverPass;
+class Recoverpass;
 }
 
-class RecoverPass : public QMainWindow
+class Recoverpass : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit RecoverPass(Client* client, QWidget *parent = nullptr);
-    ~RecoverPass();
+    explicit Recoverpass(Client* client, QWidget *parent = nullptr);
+    ~Recoverpass();
 
 private slots:
-    void on_pushButton_clicked();
+    void onRecoverButtonClicked();
 
 private:
-    Ui::RecoverPass *ui;
+    Ui::Recoverpass *ui;
     Client* client;
 };
 
