@@ -2,6 +2,9 @@
 #define MAINMENU_H
 
 #include <QMainWindow>
+class History;
+class Change_profile;
+class Choose_mode;
 
 namespace Ui {
 class MainMenu;
@@ -17,6 +20,9 @@ public:
 
 private:
     Ui::MainMenu *ui;
+    History* historyWindow;
+    Change_profile* Change_profile_Window;
+    Choose_mode* Choose_mode_Window;
 };
 
 #endif // MAINMENU_H

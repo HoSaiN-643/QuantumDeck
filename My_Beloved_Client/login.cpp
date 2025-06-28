@@ -31,6 +31,9 @@ void Login::Update_Login_Btn()
     if(RadioCheck && Textcheck) {
         ui->Login_Btn->setEnabled(true);
     }
+    else {
+        ui->Login_Btn->setEnabled(false);
+    }
 }
 
 void Login::on_Login_Btn_clicked()

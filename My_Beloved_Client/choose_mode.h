@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+class Client;
+
 namespace Ui {
 class Choose_mode;
 }
@@ -17,6 +19,7 @@ public:
 
 private:
     Ui::Choose_mode *ui;
+    Client* client;
 };
 
 #endif // CHOOSE_MODE_H

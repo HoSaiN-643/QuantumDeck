@@ -8,6 +8,11 @@ History::History(QWidget *parent)
     ui->setupUi(this);
 }
 
+History::History(Client *client, QWidget *parent)
+{
+
+}
+
 History::~History()
 {
     delete ui;

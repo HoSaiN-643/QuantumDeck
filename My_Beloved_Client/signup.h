@@ -14,7 +14,7 @@ public:
     ~Signup();
 
 private slots:
-    void on_Register_Btn_clicked();
+
 
 private:
     Ui::Signup *ui;
