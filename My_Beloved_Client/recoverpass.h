@@ -14,8 +14,11 @@ class RecoverPass : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit RecoverPass( Client* client,QWidget *parent = nullptr);
+    explicit RecoverPass(Client* client, QWidget *parent = nullptr);
     ~RecoverPass();
+
+private slots:
+    void on_pushButton_clicked();
 
 private:
     Ui::RecoverPass *ui;
