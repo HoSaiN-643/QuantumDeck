@@ -1,5 +1,8 @@
 #include "change_profile.h"
 #include "ui_change_profile.h"
+#include <QMessageBox>
+#include <QRegularExpression>
+#include <QTimer>
 
 Change_profile::Change_profile(Player& player, Client* client, QWidget *parent)
     : QMainWindow(parent)
@@ -7,24 +10,42 @@ Change_profile::Change_profile(Player& player, Client* client, QWidget *parent)
     , player(player)
     , client(client)
 {
+    if (!client) {
+        QMessageBox::critical(this, "Error", "No connection to the server.");
+        close();
+        return;
+    }
+
     ui->setupUi(this);
 
-    // پر کردن فیلدها با اطلاعات بازیکن
+    // Store original values for comparison
+    original_values.phone = player.m_phone;
+    original_values.firstname = player.m_firstname;
+    original_values.lastname = player.m_lastname;
+    original_values.email = player.m_email;
+    original_values.username = player.m_username;
+
+    // Populate fields with player data
     ui->phone_lineEdit->setText(player.m_phone);
     ui->firstname_lineEdit->setText(player.m_firstname);
     ui->lastname_lineEdit->setText(player.m_lastname);
     ui->email_lineEdit->setText(player.m_email);
     ui->username_lineEdit->setText(player.m_username);
 
-    // خالی کردن فیلدهای رمز عبور
+    // Clear password fields
     ui->current_password_lineEdit->clear();
     ui->new_password_lineEdit->clear();
     ui->confirm_new_password_lineEdit->clear();
 
-    // غیرفعال کردن دکمه ذخیره
+    // Disable save button initially
     ui->save_button->setEnabled(false);
 
-    // اتصال سیگنال‌های textChanged
+    // Add local validators
+    QRegularExpression email_rx("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    ui->email_lineEdit->setValidator(new QRegularExpressionValidator(email_rx, this));
+    ui->phone_lineEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("09\\d{9}"), this));
+
+    // Connect textChanged signals
     connect(ui->phone_lineEdit, &QLineEdit::textChanged, this, &Change_profile::onFieldChanged);
     connect(ui->firstname_lineEdit, &QLineEdit::textChanged, this, &Change_profile::onFieldChanged);
     connect(ui->lastname_lineEdit, &QLineEdit::textChanged, this, &Change_profile::onFieldChanged);
@@ -34,7 +55,7 @@ Change_profile::Change_profile(Player& player, Client* client, QWidget *parent)
     connect(ui->new_password_lineEdit, &QLineEdit::textChanged, this, &Change_profile::onFieldChanged);
     connect(ui->confirm_new_password_lineEdit, &QLineEdit::textChanged, this, &Change_profile::onFieldChanged);
 
-    // اتصال دکمه ذخیره
+    // Connect save button
     connect(ui->save_button, &QPushButton::clicked, this, &Change_profile::onSaveButtonClicked);
 }
 
@@ -45,108 +66,159 @@ Change_profile::~Change_profile()
 
 void Change_profile::onFieldChanged()
 {
-    ui->save_button->setEnabled(true);
+    // Check if any field has changed
+    bool has_changes =
+        ui->phone_lineEdit->text().trimmed() != original_values.phone ||
+        ui->firstname_lineEdit->text().trimmed() != original_values.firstname ||
+        ui->lastname_lineEdit->text().trimmed() != original_values.lastname ||
+        ui->email_lineEdit->text().trimmed() != original_values.email ||
+        ui->username_lineEdit->text().trimmed() != original_values.username ||
+        !ui->current_password_lineEdit->text().isEmpty() ||
+        !ui->new_password_lineEdit->text().isEmpty() ||
+        !ui->confirm_new_password_lineEdit->text().isEmpty();
+
+    ui->save_button->setEnabled(has_changes);
 }
 
 void Change_profile::onSaveButtonClicked()
 {
-    // دریافت مقادیر فیلدها
+    // Disable save button during processing
+    ui->save_button->setEnabled(false);
+
+    // Retrieve field values
     QString phone = ui->phone_lineEdit->text().trimmed();
     QString firstname = ui->firstname_lineEdit->text().trimmed();
     QString lastname = ui->lastname_lineEdit->text().trimmed();
     QString email = ui->email_lineEdit->text().trimmed();
     QString username = ui->username_lineEdit->text().trimmed();
-
-    // بررسی خالی نبودن فیلدها
-    if (phone.isEmpty()) {
-        QMessageBox::warning(this, "خطا", "تلفن نمی‌تواند خالی باشد.");
-        return;
-    }
-    if (firstname.isEmpty()) {
-        QMessageBox::warning(this, "خطا", "نام نمی‌تواند خالی باشد.");
-        return;
-    }
-    if (lastname.isEmpty()) {
-        QMessageBox::warning(this, "خطا", "نام خانوادگی نمی‌تواند خالی باشد.");
-        return;
-    }
-    if (email.isEmpty()) {
-        QMessageBox::warning(this, "خطا", "ایمیل نمی‌تواند خالی باشد.");
-        return;
-    }
-    if (username.isEmpty()) {
-        QMessageBox::warning(this, "خطا", "نام کاربری نمی‌تواند خالی باشد.");
-        return;
-    }
-
-    // اعتبارسنجی نام و نام خانوادگی (حداقل ۲ کاراکتر)
-    if (firstname.length() < 2) {
-        QMessageBox::warning(this, "خطا", "نام باید حداقل ۲ کاراکتر باشد.");
-        return;
-    }
-    if (lastname.length() < 2) {
-        QMessageBox::warning(this, "خطا", "نام خانوادگی باید حداقل ۲ کاراکتر باشد.");
-        return;
-    }
-
-    // اعتبارسنجی نام کاربری (حداقل ۵ کاراکتر)
-    if (username.length() < 5) {
-        QMessageBox::warning(this, "خطا", "نام کاربری باید حداقل ۵ کاراکتر باشد.");
-        return;
-    }
-
-    // اعتبارسنجی ایمیل و تلفن
-    QString error = InputValidator::validateEmail(email);
-    if (!error.isEmpty()) {
-        QMessageBox::warning(this, "خطا", error);
-        return;
-    }
-    error = InputValidator::validatePhone(phone);
-    if (!error.isEmpty()) {
-        QMessageBox::warning(this, "خطا", error);
-        return;
-    }
-
-    // مدیریت رمز عبور
-    QString password_to_send = player.m_password;
     QString current_password = ui->current_password_lineEdit->text();
     QString new_password = ui->new_password_lineEdit->text();
     QString confirm_new_password = ui->confirm_new_password_lineEdit->text();
 
-    if (!current_password.isEmpty()) {
-        if (current_password != player.m_password) {
-            QMessageBox::warning(this, "خطا", "رمز فعلی نادرست است.");
-            return;
-        }
-        error = InputValidator::validatePassword(current_password);
-        if (!error.isEmpty()) {
-            QMessageBox::warning(this, "خطا", "رمز فعلی: " + error);
-            return;
-        }
-        if (!new_password.isEmpty()) {
-            if (new_password != confirm_new_password) {
-                QMessageBox::warning(this, "خطا", "رمز جدید و تأیید آن مطابقت ندارند.");
-                return;
-            }
-            error = InputValidator::validatePassword(new_password);
-            if (!error.isEmpty()) {
-                QMessageBox::warning(this, "خطا", "رمز جدید: " + error);
-                return;
-            }
-            password_to_send = new_password;
-        }
+    // Validate non-empty fields
+    if (phone.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Phone cannot be empty.");
+        ui->save_button->setEnabled(true);
+        return;
+    }
+    if (firstname.isEmpty()) {
+        QMessageBox::warning(this, "Error", "First name cannot be empty.");
+        ui->save_button->setEnabled(true);
+        return;
+    }
+    if (lastname.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Last name cannot be empty.");
+        ui->save_button->setEnabled(true);
+        return;
+    }
+    if (email.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Email cannot be empty.");
+        ui->save_button->setEnabled(true);
+        return;
+    }
+    if (username.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Username cannot be empty.");
+        ui->save_button->setEnabled(true);
+        return;
     }
 
-    // ارسال اطلاعات به سرور
-    QString message = QString("C[CF][%1][%2][%3][%4][%5][%6]")
-                         .arg(firstname)
-                         .arg(lastname)
-                         .arg(email)
-                         .arg(phone)
-                         .arg(username)
-                         .arg(password_to_send);
-    client->WriteToServer(message);
+    // Validate name lengths
+    if (firstname.length() < 2) {
+        QMessageBox::warning(this, "Error", "First name must be at least 2 characters.");
+        ui->save_button->setEnabled(true);
+        return;
+    }
+    if (lastname.length() < 2) {
+        QMessageBox::warning(this, "Error", "Last name must be at least 2 characters.");
+        ui->save_button->setEnabled(true);
+        return;
+    }
 
-    // اطلاع‌رسانی موفقیت
-    QMessageBox::information(this, "موفقیت", "تغییرات با موفقیت ذخیره شد.");
+    // Validate username length
+    if (username.length() < 5) {
+        QMessageBox::warning(this, "Error", "Username must be at least 5 characters.");
+        ui->save_button->setEnabled(true);
+        return;
+    }
+
+    // Validate email and phone with InputValidator
+    QString error = InputValidator::validateEmail(email);
+    if (!error.isEmpty()) {
+        QMessageBox::warning(this, "Error", error);
+        ui->save_button->setEnabled(true);
+        return;
+    }
+    error = InputValidator::validatePhone(phone);
+    if (!error.isEmpty()) {
+        QMessageBox::warning(this, "Error", error);
+        ui->save_button->setEnabled(true);
+        return;
+    }
+
+    // Handle password changes
+    QString password_to_send = player.m_password;
+    if (!current_password.isEmpty() || !new_password.isEmpty() || !confirm_new_password.isEmpty()) {
+        // All password fields must be filled
+        if (current_password.isEmpty() || new_password.isEmpty() || confirm_new_password.isEmpty()) {
+            QMessageBox::warning(this, "Error", "All password fields must be filled to change the password.");
+            ui->save_button->setEnabled(true);
+            return;
+        }
+
+        // Verify current password (plaintext comparison is insecure)
+        if (current_password != player.m_password) {
+            QMessageBox::warning(this, "Error", "Current password is incorrect.");
+            ui->save_button->setEnabled(true);
+            return;
+        }
+
+        // Check new password match
+        if (new_password != confirm_new_password) {
+            QMessageBox::warning(this, "Error", "New password and confirmation do not match.");
+            ui->save_button->setEnabled(true);
+            return;
+        }
+
+        // Validate new password
+        error = InputValidator::validatePassword(new_password);
+        if (!error.isEmpty()) {
+            QMessageBox::warning(this, "Error", "New password: " + error);
+            ui->save_button->setEnabled(true);
+            return;
+        }
+
+        password_to_send = new_password;
+    }
+
+    // Send data to server
+    QString message = QString("C[CF][%1][%2][%3][%4][%5][%6]")
+                         .arg(firstname, lastname, email, phone, username, password_to_send);
+    bool success = client->WriteToServer(message);
+
+    if (!success) {
+        QMessageBox::critical(this, "Error", "Failed to send data to server.");
+        ui->save_button->setEnabled(true);
+        return;
+    }
+
+    // Update player data
+    player.m_phone = phone;
+    player.m_firstname = firstname;
+    player.m_lastname = lastname;
+    player.m_email = email;
+    player.m_username = username;
+    if (password_to_send != player.m_password) {
+        player.m_password = password_to_send;
+    }
+
+    // Update original values
+    original_values.phone = phone;
+    original_values.firstname = firstname;
+    original_values.lastname = lastname;
+    original_values.email = email;
+    original_values.username = username;
+
+    // Show success message
+    QMessageBox::information(this, "Success", "Changes saved successfully.");
+    ui->save_button->setEnabled(false);
 }
