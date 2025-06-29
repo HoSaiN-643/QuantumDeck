@@ -15,6 +15,9 @@ public:
     explicit History(QWidget *parent = nullptr);
     ~History();
 
+private slots:
+    void onClearButtonClicked();  // اسلات برای پاک کردن تاریخچه
+
 private:
     Ui::History *ui;
 };

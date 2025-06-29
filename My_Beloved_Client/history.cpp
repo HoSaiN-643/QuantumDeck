@@ -12,3 +12,7 @@ History::~History()
 {
     delete ui;
 }
+void History::onClearButtonClicked()
+{
+    ui->historyList->clear();
+}
