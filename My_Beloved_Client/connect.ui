@@ -179,22 +179,5 @@
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>Connect_Btn</sender>
-   <signal>clicked()</signal>
-   <receiver>connect</receiver>
-   <slot>on_Connect_Btn_clicked()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>449</x>
-     <y>439</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

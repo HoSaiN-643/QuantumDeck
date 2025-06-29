@@ -13,6 +13,7 @@ Connect::Connect(Client *client, QWidget *parent)
     logWindow(new Log(client, this))
 {
     ui->setupUi(this);
+    connect(ui->Connect_Btn, &QPushButton::clicked, this, &Connect::on_Connect_Btn_clicked);
 
     connect(client, &Client::ConnectedToServer,
             this,   &Connect::OnConnected);
