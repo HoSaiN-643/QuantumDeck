@@ -21,6 +21,7 @@ Signup::Signup(Player& player,Client *client, QWidget *parent)
         connect(edit, &QTextEdit::textChanged, this, &Signup::validateFields);
 
     connect(client,&Client::SuccesFullSignUp,this,&Signup::OnSuccesfullSignUp);
+    connect(ui->SignUp_Btn,&QPushButton::clicked,this,&Signup::SignUp_Btn_clicked);
 
 
 }
@@ -28,6 +29,30 @@ Signup::Signup(Player& player,Client *client, QWidget *parent)
 Signup::~Signup()
 {
     delete ui;
+}
+
+void Signup::SignUp_Btn_clicked()
+{
+    QString firstName       = ui->First_Name_Text->toPlainText().trimmed();
+    QString lastName        = ui->Last_Name_Text->toPlainText().trimmed();
+    QString email           = ui->Email_Text->toPlainText().trimmed();
+    QString phone           = ui->Phone_Text->toPlainText().trimmed();
+    QString username        = ui->Uname_Text->toPlainText().trimmed();
+    QString password        = ui->Pwd_text->toPlainText().trimmed();
+    QString confirmPassword = ui->Confirm_Pwd_text->toPlainText().trimmed();
+
+    // … اعتبارسنجی …
+
+    // ساخت پیام با ترتیب [first][last][email][phone][username][password]
+    QString data = QString("S[%1][%2][%3][%4][%5][%6]")
+                       .arg(firstName,
+                            lastName,
+                            email,
+                            phone,
+                            username,
+                            password);
+    client->WriteToServer(data);
+    qDebug() << "Send sign up request to server :" << data;
 }
 
 void Signup::validateFields()
@@ -51,29 +76,7 @@ void Signup::OnSuccesfullSignUp()
 }
 
 
-void Signup::on_SignUp_Btn_clicked()
-{
-    QString firstName       = ui->First_Name_Text->toPlainText().trimmed();
-    QString lastName        = ui->Last_Name_Text->toPlainText().trimmed();
-    QString email           = ui->Email_Text->toPlainText().trimmed();
-    QString phone           = ui->Phone_Text->toPlainText().trimmed();
-    QString username        = ui->Uname_Text->toPlainText().trimmed();
-    QString password        = ui->Pwd_text->toPlainText().trimmed();
-    QString confirmPassword = ui->Confirm_Pwd_text->toPlainText().trimmed();
 
-    // … اعتبارسنجی …
-
-    // ساخت پیام با ترتیب [first][last][email][phone][username][password]
-    QString data = QString("S[%1][%2][%3][%4][%5][%6]")
-                       .arg(firstName,
-                            lastName,
-                            email,
-                            phone,
-                            username,
-                            password);
-    client->WriteToServer(data);
-    qDebug() << "Send sign up request to server :" << data;
-}
 
 
 

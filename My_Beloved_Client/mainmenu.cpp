@@ -15,6 +15,9 @@ MainMenu::MainMenu(Player& player, Client* client, QWidget *parent)
 {
     ui->setupUi(this);
     ui->History_Btn->setEnabled(false);
+    connect(ui->Choose_Mode_Btn,&QPushButton::clicked,this,&MainMenu::Choose_Mode_Btn_clicked);
+    connect(ui->History_Btn,&QPushButton::clicked,this,&MainMenu::History_Btn_clicked);
+    connect(ui->Change_prof_Btn,&QPushButton::clicked,this,&MainMenu::Change_prof_Btn_clicked);
 }
 
 Client* client;
@@ -27,21 +30,23 @@ MainMenu::~MainMenu()
     delete ui;
 }
 
-void MainMenu::on_Choose_Mode_Btn_clicked()
+void MainMenu::Choose_Mode_Btn_clicked()
 {
     this->close();
     Choose_mode_Window->show();
 }
 
 
-void MainMenu::on_History_Btn_clicked()
+
+
+void MainMenu::History_Btn_clicked()
 {
     this->close();
     historyWindow->show();
 }
 
 
-void MainMenu::on_Change_prof_Btn_clicked()
+void MainMenu::Change_prof_Btn_clicked()
 {
     this->close();
     Change_profile_Window->show();

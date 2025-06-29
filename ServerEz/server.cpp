@@ -1,6 +1,7 @@
 
 #include "server.h"
 #include <QDebug>
+#include <PreGame.h>
 
 SERVER::SERVER(MemberDatabaseManager& db,
                const QString& address,
@@ -51,130 +52,221 @@ void SERVER::OnNewConnection()
     }
 }
 
+QStringList SERVER::extractFields(const QString &s) const
+{
+    QStringList list;
+    int pos = 0;
+    while (true) {
+        int a = s.indexOf('[', pos);
+        int b = s.indexOf(']', a + 1);
+        if (a < 0 || b < 0) break;
+        list << s.mid(a + 1, b - a - 1);
+        pos = b + 1;
+    }
+    return list;
+}
+
 void SERVER::OnReadyRead()
 {
-    QTcpSocket* client = qobject_cast<QTcpSocket*>(sender());
-    if (!client) return;
-
-    QByteArray raw = client->readAll();
-    if (raw.isEmpty()) return;
-
-    char cmd = raw.at(0);
-    QString payload = QString::fromUtf8(raw.mid(1));
-
-    auto extractFields = [&](const QString& s)->QStringList {
-        QStringList fields;
-        int pos = 0;
-        while (true) {
-            int a = s.indexOf('[', pos);
-            int b = s.indexOf(']', a+1);
-            if (a < 0 || b < 0) break;
-            fields << s.mid(a+1, b-a-1);
-            pos = b + 1;
-        }
-        return fields;
-    };
-
-    if (cmd == 'L') { // LOGIN
-        QStringList f = extractFields(payload);
-        if (f.size() != 3) {
-            client->write("L[ERROR][BadFormat]");
-            return;
-        }
-        QString type = f[0].toUpper();
-        QString id   = f[1];
-        QString pwd  = f[2];
-        QVariantMap member;
-        if (type == "E")
-            member = db.GetMemberByEmail(id);
-        else if (type == "U")
-            member = db.GetMemberByUsername(id);
-        else {
-            client->write("L[ERROR][BadLoginType]");
-            return;
-        }
-        if (member.isEmpty()) {
-            client->write("L[FAIL][Member not found]");
-        }
-        else if (member.value("password").toString() != pwd) {
-            client->write("L[WRONG][Wrong password]");
-        }
-        else {
-            // همه فیلدها را بفرست
-            QString data = QString(
-                               "L[OK][successfull login]"
-                               "[%1][%2][%3][%4][%5][%6]"
-                               ).arg(
-                                   member.value("firstname").toString(),
-                                   member.value("lastname").toString(),
-                                   member.value("email").toString(),
-                                   member.value("phone").toString(),
-                                   member.value("username").toString(),
-                                   member.value("password").toString()
-                                   );
-            client->write(data.toUtf8());
-            clients[client] = member.value("username").toString();
-        }
+    // 1) دریافت سوکت فرستنده
+    QTcpSocket *client = qobject_cast<QTcpSocket*>(sender());
+    if (!client)  {
+        qDebug() << "client is empty";
+        return;
     }
-    else if (cmd == 'S') { // SIGNUP
-        QStringList f = extractFields(payload);
-        if (f.size() != 6) {
-            client->write("S[ERROR][BadFormat]");
-            return;
-        }
-        // ترتیب دقیق: [first][last][email][phone][username][password]
-        const QString first  = f.at(0);
-        const QString last   = f.at(1);
-        const QString email  = f.at(2);
-        const QString phone  = f.at(3);
-        const QString uname  = f.at(4);
-        const QString pwd    = f.at(5);
-
-        // لاگ برای اطمینان
-        qDebug() << "Signup fields:"
-                 << first << last << email << phone << uname << pwd;
-
-        // فراخوانی با ترتیب جدید
-        bool ok = db.addMember(client,
-                               first,    // firstname
-                               last,     // lastname
-                               email,    // email
-                               phone,    // phone
-                               uname,    // username
-                               pwd);     // password
-
-        // (می‌توانید درون addMember پیام ارسال می‌شود)
+    // 2) خواندن کل داده
+    const QByteArray raw = client->readAll();
+    qDebug() << "data : " << raw;
+    if (raw.isEmpty())  {
+        qDebug() << "Raw is empty";
+        return;
     }
-    else if (cmd == 'R') { // RECOVER
-        QStringList f = extractFields(payload);
-        if (f.size() != 1) {
-            client->write("R[ERROR][BadFormat]");
-            return;
-        }
-        QString phone = f[0];
-        QVariantMap member = db.GetMemberByPhone(phone);
-        if (member.isEmpty()) {
-            client->write("R[WRONG][Phone not registered]");
-        } else {
-            QString resp = QString("R[OK][Password recovered][%1]").arg(member.value("password").toString());
-            client->write(resp.toUtf8());
-        }
+    // 3) جدا کردن دستور و payload
+    const char cmd = raw.at(0);
+    const QString payload = QString::fromUtf8(raw.mid(1));
+
+    // 4) استخراج فیلدها
+    const QStringList f = extractFields(payload);
+    qDebug() << "type reciecved : " << cmd;
+
+
+    // 5) فراخوانی متد مناسب
+    switch (cmd) {
+    case 'L': handleLogin(client, f);            break;
+    case 'S': handleSignup(client, f);           break;
+    case 'R': handleRecover(client, f);          break;
+    case 'C': handleUpdateProfile(client, f);    break;
+    case 'P': handlePreGame(client, f);          break;
+    default:  handleUnknown(client);             break;
     }
-    else if(cmd == 'C') {
-       QStringList f = extractFields(payload);
-        if(f[0] == "CF") { // updating profile;
-           if(f.size() != 8) {
-               client->write("C[CF][ERROR][Bad format recieved]");
-               qDebug() << "Bad format Recieved";
-           }
-           db.updateMemberAllFields(client,f[1],f[2],f[3],f[4],f[5],f[6],f[7]);
+}
 
-        }
+//==============================================================================
+// Login handler
+//==============================================================================
+// فرمت صحیح: L[type][id][pwd]
+//  type ∈ {E,U}، id ایمیل یا یوزرنیم
+// SERVER.cpp
 
+void SERVER::handleLogin(QTcpSocket *client, const QStringList &f)
+{
+    // ۱) بررسی تعداد فیلدها
+    if (f.size() != 3) {
+        client->write("L[ERROR][BadFormat]\n");
+        return;
+    }
+
+    const QString type = f[0].toUpper();
+    const QString id   = f[1];
+    const QString pwd  = f[2];
+
+    // ۲) گرفتن اطلاعات عضو از دیتابیس
+    QVariantMap member;
+    if      (type == "E") member = db.GetMemberByEmail(id);
+    else if (type == "U") member = db.GetMemberByUsername(id);
+    else {
+        client->write("L[ERROR][BadLoginType]\n");
+        return;
+    }
+
+    // ۳) بررسی وجود عضو
+    if (member.isEmpty()) {
+        client->write("L[FAIL][Member not found]\n");
+    }
+    // ۴) بررسی صحت کلمه‌عبور
+    else if (member.value("password").toString() != pwd) {
+        client->write("L[WRONG][Wrong password]\n");
+    }
+    // ۵) همه‌چیز اوکی است ⇒ ارسال پاسخ OK با فیلدهای کامل
+    else {
+        // L[OK][successfull login][fn][ln][em][ph][un][pw]\n
+        QString resp = QString(
+                           "L[OK][successfull login]"
+                           "[%1][%2][%3][%4][%5][%6]\n"
+                           ).arg(
+                               member.value("firstname").toString(),
+                               member.value("lastname").toString(),
+                               member.value("email").toString(),
+                               member.value("phone").toString(),
+                               member.value("username").toString(),
+                               member.value("password").toString()
+                               );
+
+        client->write(resp.toUtf8());
+        clients[client] = member.value("username").toString();
+    }
+}
+
+
+//==============================================================================
+// Signup handler
+//==============================================================================
+// فرمت صحیح: S[first][last][email][phone][username][password]
+void SERVER::handleSignup(QTcpSocket *client, const QStringList &f)
+{
+    if (f.size() != 6) {
+        client->write("S[ERROR][BadFormat]");
+        return;
+    }
+    const QString first = f[0], last  = f[1],
+        email = f[2], phone = f[3],
+        uname = f[4], pwd   = f[5];
+
+    qDebug() << "Signup fields:" << first << last << email << phone << uname << pwd;
+
+    // فرض: addMember خودش پیام مناسب را می‌فرستد
+    bool ok = db.addMember(client, first, last, email, phone, uname, pwd);
+    Q_UNUSED(ok);
+}
+
+//==============================================================================
+// Recover handler
+//==============================================================================
+// فرمت: R[phone]
+void SERVER::handleRecover(QTcpSocket *client, const QStringList &f)
+{
+    if (f.size() != 1) {
+        client->write("R[ERROR][BadFormat]");
+        return;
+    }
+    const QString phone = f[0];
+    const QVariantMap member = db.GetMemberByPhone(phone);
+
+    if (member.isEmpty()) {
+        client->write("R[WRONG][Phone not registered]");
     }
     else {
-        client->write("X[ERROR][UnknownCommand]");
+        const QString resp = QString("R[OK][Password recovered][%1]")
+        .arg(member.value("password").toString());
+        client->write(resp.toUtf8());
     }
+}
+
+//==============================================================================
+// Update Profile handler (C[CF]…)
+//==============================================================================
+// فرمت: C[CF][f1][…][f7]
+void SERVER::handleUpdateProfile(QTcpSocket *client, const QStringList &f)
+{
+    if (f.isEmpty() || f[0] != "CF") {
+        client->write("C[ERROR][BadFormat]");
+        return;
+    }
+    if (f.size() != 8) {
+        client->write("C[CF][ERROR][Bad format recieved]");
+        qDebug() << "Bad format in C[CF]";
+        return;
+    }
+    // f[1]…f[7]
+    db.updateMemberAllFields(client,
+                             f[1], f[2], f[3],
+                             f[4], f[5], f[6], f[7]);
+}
+
+//==============================================================================
+// Pre-game lobby handler
+//==============================================================================
+// فرمت: P[numPlayers]
+void SERVER::handlePreGame(QTcpSocket *client, const QStringList &f)
+{
+    // فرمت درست: P[<wantedPlayers>]
+    if (f.size() != 1) {
+        client->write("P[ERROR][BadFormat]");
+        return;
+    }
+    bool ok = false;
+    int wantedPlayers = f[0].toInt(&ok);
+    if (!ok || wantedPlayers < 2) {
+        client->write("P[ERROR][BadMode]");
+        return;
+    }
+
+    // pairing socket با نام کاربری
+    auto pair = qMakePair(client, clients.value(client));
+
+    // اگر هنوز لابی‌ نداریم، بساز
+    if (!lobby) {
+        lobby = new PreGame(wantedPlayers, pair, this);
+    }
+    // اگر هست ولی فول نشده، اضافه کن
+    else if (!lobby->IsServerFull) {
+        lobby->AddPlayer(pair);
+    }
+    // اگر هست و فول است، ارور بده
+    else {
+        QString resp = QString("P[%1][FULL][Server is full]")
+        .arg(QString::number(wantedPlayers));
+        client->write(resp.toUtf8());
+    }
+}
+
+
+//==============================================================================
+// Unknown command handler
+//==============================================================================
+void SERVER::handleUnknown(QTcpSocket *client)
+{
+    client->write("X[ERROR][UnknownCommand]");
 }
 
 

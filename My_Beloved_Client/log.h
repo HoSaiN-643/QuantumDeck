@@ -21,8 +21,8 @@ public:
     void Show();
 
 private slots:
-    void on_Login_Btn_clicked();
-    void on_Signup_btn_clicked();
+    void Login_Btn_clicked();
+    void Signup_btn_clicked();
 
 private:
     Ui::Log *ui;

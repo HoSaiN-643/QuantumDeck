@@ -16,6 +16,7 @@ Connect::Connect(Player& player, Client *client, QWidget *parent)
     ui->setupUi(this);
     connect(client, &Client::ConnectedToServer, this, &Connect::OnConnected);
     connect(client, &Client::ErrorOccurred, this, &Connect::OnErrorOccurred);
+    connect(ui->Connect_Btn,&QPushButton::clicked,this,&Connect::Connect_Btn_clicked);
 }
 
 
@@ -25,22 +26,22 @@ Connect::~Connect()
     // logWindow به عنوان child والد (this) پاک می‌شود
 }
 
-void Connect::on_Connect_Btn_clicked()
-{
 
-    int  port   = ui->Port_line->text().toInt();
+void Connect::OnConnected()
+{
+    this->hide();
+    logWindow->show();
+}
+
+void Connect::Connect_Btn_clicked()
+{
+    int  port = ui->Port_line->text().toInt();
 
     QHostAddress host(QString(ui->Address_line->text().trimmed()));
 
 
     qDebug() << "Connecting to" << host.toString() << ":" << port;
     client->ConnectToServer(host, quint16(port));
-}
-
-void Connect::OnConnected()
-{
-    this->hide();
-    logWindow->show();
 }
 
 void Connect::OnErrorOccurred(const QString &errorString)

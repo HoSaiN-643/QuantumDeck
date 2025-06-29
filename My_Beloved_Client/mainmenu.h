@@ -21,11 +21,11 @@ public:
     ~MainMenu();
 
 private slots:
-    void on_Choose_Mode_Btn_clicked();
+    void Choose_Mode_Btn_clicked();
 
-    void on_History_Btn_clicked();
+    void History_Btn_clicked();
 
-    void on_Change_prof_Btn_clicked();
+    void Change_prof_Btn_clicked();
 
 private:
     Ui::MainMenu *ui;

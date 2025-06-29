@@ -11,7 +11,7 @@ Login::Login(Player& player, Client *client, QWidget *parent)
     ui(new Ui::Login),
     player(player),
     client(client),
-    menuWindow(new MainMenu(player,client))
+    menuWindow(nullptr)
 {
     ui->setupUi(this);
     ui->Login_Btn->setEnabled(false);
@@ -20,7 +20,8 @@ Login::Login(Player& player, Client *client, QWidget *parent)
     connect(ui->Log_Uname_Radio, &QRadioButton::clicked, this, &Login::Update_Login_Btn);
     connect(ui->UE_text, &QTextEdit::textChanged, this, &Login::Update_Login_Btn);
     connect(ui->Pwd_text, &QTextEdit::textChanged, this, &Login::Update_Login_Btn);
-    connect(client,&Client::SuccesFull_LogIn,this,&Login::On_Succesful_Login);
+    connect(client, &Client::SuccesFull_LogIn, this, &Login::On_Succesful_Login, Qt::UniqueConnection);
+    connect(ui->Login_Btn,&QPushButton::clicked,this,&Login::Login_Btn_Clicked);
 
 }
 
@@ -34,8 +35,9 @@ void Login::Update_Login_Btn()
     bool RadioChecked = ui->Log_Email_Radio->isChecked() || ui->Log_Uname_Radio->isChecked();
     bool TextChecked = !ui->Pwd_text->toPlainText().isEmpty() && !ui->UE_text->toPlainText().isEmpty();
 
+    if(ui->Log_Email_Radio->isChecked() || ui->Log_Uname_Radio->isChecked()) {
     ui->UE_Label_2->setText(ui->Log_Email_Radio->isChecked() ? "Email" : "Username");
-
+    }
     if( RadioChecked && TextChecked) {
         ui->Login_Btn->setEnabled(true);
     }
@@ -44,18 +46,21 @@ void Login::Update_Login_Btn()
     }
 }
 
-void Login::on_Login_Btn_clicked()
+void Login::Login_Btn_Clicked()
 {
+
     QString inputText = ui->UE_text->toPlainText().trimmed();
     QString password = ui->Pwd_text->toPlainText().trimmed();
-    QString type = ui->Log_Email_Radio->isChecked() ? "E" : "U";
+
+      QString type = ui->Log_Email_Radio->isChecked() ? "E" : "U";
 
     // Re-validate before sending
     QStringList errors;
     if (ui->Log_Email_Radio->isChecked()) {
         if (auto err = InputValidator::validateEmail(inputText); !err.isEmpty())
             errors << "Email: " + err;
-    } else if (ui->Log_Uname_Radio->isChecked()) {
+    }
+    else if (ui->Log_Uname_Radio->isChecked()) {
         if (inputText.isEmpty())
             errors << "Username cannot be empty";
     }
@@ -70,13 +75,20 @@ void Login::on_Login_Btn_clicked()
     // Send data in correct format
     QString data = QString("L[%1][%2][%3]").arg(type, inputText, password);
     client->WriteToServer(data);
+    return;
     // You can also reset the form or add any additional actions here
 }
+
+
+
 
 void Login::On_Succesful_Login()
 {
 
- this->close();
+    if (!menuWindow) {
+        menuWindow = new MainMenu(player, client);
+    }
     menuWindow->show();
+    this->close();
 
 }

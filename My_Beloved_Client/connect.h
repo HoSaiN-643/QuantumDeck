@@ -19,7 +19,7 @@ public:
 
 private slots:
     void OnConnected();
-    void on_Connect_Btn_clicked();
+    void Connect_Btn_clicked();
     void OnErrorOccurred(const QString &errorString);
 
 private:

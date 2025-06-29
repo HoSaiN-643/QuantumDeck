@@ -18,7 +18,7 @@ public:
 
 private slots:
     void Update_Login_Btn();
-    void on_Login_Btn_clicked();
+    void Login_Btn_Clicked();
     void On_Succesful_Login();
 
 private:

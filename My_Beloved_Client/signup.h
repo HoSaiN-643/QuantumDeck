@@ -17,7 +17,7 @@ public:
     ~Signup();
 
 private slots:
-    void on_SignUp_Btn_clicked();  // Called when user clicks the sign up button
+    void SignUp_Btn_clicked();  // Called when user clicks the sign up button
     void validateFields();
     void OnSuccesfullSignUp();    // Called on every field change to enable/disable the button
 

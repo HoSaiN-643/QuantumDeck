@@ -1,46 +1,43 @@
+// Client.h
 #ifndef CLIENT_H
 #define CLIENT_H
 
 #include <QObject>
-#include <QHostAddress>
-#include "player.h"
+#include <QTcpSocket>
+#include <QByteArray>
+#include <QStringList>
 
-
-class QTcpSocket;
 class Login;
-
 
 class Client : public QObject
 {
     Q_OBJECT
-
 public:
     explicit Client(QObject *parent = nullptr);
-    ~Client();
+    void connectToServer(const QString &host, quint16 port);
+    void writeToServer(const QByteArray &data);
+    void setLoginWindow(Login *loginWindow);
 
-    void ConnectToServer(const QHostAddress &host, quint16 port);
-    void DisconnectFromServer();
-    void WriteToServer(const QString& data);
-
-    Player &GetPlayer();
 signals:
-    void ConnectedToServer();
-    void DisconnectedFromServer();
-    void ErrorOccurred(const QString &errorString);
+    void successfulLogin(const QString &firstName, const QString &lastName);
+    void signupSuccessful();
+    void recoverSuccessful();
 
 private slots:
-    void onConnected();
-    void onDisconnected();
+    void onReadyRead();
     void onError(QAbstractSocket::SocketError socketError);
-    void OnReadyRead();
-signals :
-    void SuccesFullSignUp();
-    void SuccesFull_LogIn();
 
 private:
-    QTcpSocket *m_socket;
-    Player player;
-    Login* loginWindow;
+    QStringList extractFields(const QString &msg);
+    void handleLogin(const QStringList &fields);
+    void handleSignup(const QStringList &fields);
+    void handleRecover(const QStringList &fields);
+    void handlePreGame(const QStringList &fields);
+    void handleErrorCmd(const QStringList &fields);
+
+    QTcpSocket *socket;
+    QByteArray readBuffer;
+    Login *loginWindow;
 };
 
 #endif // CLIENT_H

@@ -20,6 +20,7 @@ SOURCES += \
     mainmenu.cpp \
     player.cpp \
     recoverpass.cpp \
+    search_window.cpp \
     signup.cpp \
     start.cpp \
     InputValidator.cpp
@@ -35,6 +36,7 @@ HEADERS += \
     mainmenu.h \
     player.h \
     recoverpass.h \
+    search_window.h \
     signup.h \
     start.h \
     InputValidator.h
@@ -48,6 +50,7 @@ FORMS += \
     login.ui \
     mainmenu.ui \
     recoverpass.ui \
+    search_window.ui \
     signup.ui
 
 # Default rules for deployment.

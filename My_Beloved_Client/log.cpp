@@ -12,8 +12,8 @@ Log::Log(Player& player, Client *client, QWidget *parent)
     s(new Signup(player, client, this))
 {
     ui->setupUi(this);
-    connect(ui->Login_Btn,  &QPushButton::clicked, this, &Log::on_Login_Btn_clicked);
-    // connect(ui->Signup_btn, &QPushButton::clicked, this, &Log::on_Signup_btn_clicked);
+    connect(ui->Login_Btn,  &QPushButton::clicked, this, &Log::Login_Btn_clicked);
+    connect(ui->Signup_btn, &QPushButton::clicked, this, &Log::Signup_btn_clicked);
 }
 
 
@@ -28,18 +28,17 @@ void Log::Show()
     this->show();   // قبلاً اشتباه اینجا فراخوانی Show می‌شد که recursion ایجاد می‌کرد
 }
 
-void Log::on_Login_Btn_clicked()
+void Log::Login_Btn_clicked()
 {
-      this->close();
+    this->close();
     l->show();
-
 
 }
 
-void Log::on_Signup_btn_clicked()
+void Log::Signup_btn_clicked()
 {
     this->close();
     s->show();
-
-
 }
+
+
