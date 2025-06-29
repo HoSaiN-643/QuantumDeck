@@ -1,6 +1,7 @@
 #include "login.h"
 #include "ui_login.h"
 
+// Constructor: Initializes the main window and sets up the UI
 Login::Login(Client* client, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::Login)
@@ -8,47 +9,49 @@ Login::Login(Client* client, QWidget *parent)
 {
     ui->setupUi(this);
 
-    // اتصال دکمه ورود
+    // Connect login button
     connect(ui->login_button, &QPushButton::clicked, this, &Login::onLoginButtonClicked);
 }
 
+// Destructor: Cleans up the UI
 Login::~Login()
 {
     delete ui;
 }
 
+// Slot for login button click
 void Login::onLoginButtonClicked()
 {
     QString username = ui->username_lineEdit->text().trimmed();
     QString password = ui->password_lineEdit->text();
 
-    // بررسی خالی نبودن فیلدها
+    // Validate non-empty fields
     if (username.isEmpty()) {
-        QMessageBox::warning(this, "خطا", "نام کاربری نمی‌تواند خالی باشد.");
+        QMessageBox::warning(this, "Error", "Username cannot be empty.");
         return;
     }
     if (password.isEmpty()) {
-        QMessageBox::warning(this, "خطا", "رمز عبور نمی‌تواند خالی باشد.");
+        QMessageBox::warning(this, "Error", "Password cannot be empty.");
         return;
     }
 
-    // اعتبارسنجی نام کاربری (حداقل ۵ کاراکتر)
+    // Validate username length (minimum 5 characters)
     if (username.length() < 5) {
-        QMessageBox::warning(this, "خطا", "نام کاربری باید حداقل ۵ کاراکتر باشد.");
+        QMessageBox::warning(this, "Error", "Username must be at least 5 characters.");
         return;
     }
 
-    // اعتبارسنجی رمز عبور
+    // Validate password
     QString error = InputValidator::validatePassword(password);
     if (!error.isEmpty()) {
-        QMessageBox::warning(this, "خطا", "رمز عبور: " + error);
+        QMessageBox::warning(this, "Error", "Password: " + error);
         return;
     }
 
-    // ارسال اطلاعات به سرور
+    // Send data to server
     QString message = QString("L[LOGIN][%1][%2]").arg(username).arg(password);
     client->WriteToServer(message);
 
-    // اطلاع‌رسانی موفقیت (فرض بر موفقیت)
-    QMessageBox::information(this, "موفقیت", "ورود با موفقیت انجام شد.");
+    // Notify success (assuming success)
+    QMessageBox::information(this, "Success", "Login successful.");
 }

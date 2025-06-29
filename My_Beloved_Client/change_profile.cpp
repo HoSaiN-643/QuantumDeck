@@ -1,3 +1,4 @@
+#include "player.h"
 #include "change_profile.h"
 #include "ui_change_profile.h"
 #include <QMessageBox>

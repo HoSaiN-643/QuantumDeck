@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include <QString>
-
+#include"InputValidator.h"
 // Assume Player and Client classes are defined
 class Player;
 class Client;

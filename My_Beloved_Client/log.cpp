@@ -9,8 +9,8 @@ Log::Log(Player& player, Client *client, QWidget *parent)
     : QMainWindow(parent),
       ui(new Ui::Log),
       client(client),
-      l(new Login(player, client, this)),
-      s(new Signup(player, client, this))
+      l(new Login(client, this)),  // Removed player parameter
+      s(new Signup(client, this))  // Removed player parameter
 {
     ui->setupUi(this);
     connect(ui->Login_Btn, &QPushButton::clicked, this, &Log::on_Login_Btn_clicked);
