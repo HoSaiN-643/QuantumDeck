@@ -216,10 +216,10 @@
       <widget class="QPushButton" name="SignUp_Btn">
        <property name="geometry">
         <rect>
-         <x>150</x>
-         <y>410</y>
+         <x>440</x>
+         <y>270</y>
          <width>200</width>
-         <height>90</height>
+         <height>120</height>
         </rect>
        </property>
        <property name="text">
