@@ -6,7 +6,7 @@
 #include <QTcpSocket>
 #include <QMap>
 #include <QHostAddress>
-#include <memberdatabasemanager.h>
+#include "memberdatabasemanager.h"
 
 class PreGame;
 
@@ -15,10 +15,10 @@ class SERVER : public QObject
     Q_OBJECT
 
     QTcpServer*                 server;
-    QMap<QTcpSocket*,QString>   clients;
+    QMap<QTcpSocket*, QString>  clients;
     int                         total;
     MemberDatabaseManager&      db;
-    PreGame* lobby;
+    PreGame*                    lobby;
 
 public:
     explicit SERVER(MemberDatabaseManager& db,
@@ -29,7 +29,7 @@ public:
 private slots:
     QStringList extractFields(const QString &s) const;
 
-    // هِندلرهای دستورات
+    // Command handlers
     void handleLogin(QTcpSocket *client, const QStringList &f);
     void handleSignup(QTcpSocket *client, const QStringList &f);
     void handleRecover(QTcpSocket *client, const QStringList &f);

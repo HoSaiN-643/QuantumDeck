@@ -5,10 +5,11 @@
 #include <QHostAddress>
 #include "player.h"
 
-
 class QTcpSocket;
 class Login;
-
+class Connect; // Forward declaration
+class Signup;  // Forward declaration
+class Choose_mode; // Forward declaration
 
 class Client : public QObject
 {
@@ -21,14 +22,13 @@ public:
     void ConnectToServer(const QHostAddress &host, quint16 port);
     void DisconnectFromServer();
 
-
     Player &GetPlayer();
     void WriteToServer(const QString &data);
 
-signals:
-    void ConnectedToServer();
-    void DisconnectedFromServer();
-    void ErrorOccurred(const QString &errorString);
+    // Add pointers to dependent classes
+    void SetConnect(Connect *connect) { m_connect = connect; }
+    void SetSignup(Signup *signup) { m_signup = signup; }
+    void SetChooseMode(Choose_mode *chooseMode) { m_chooseMode = chooseMode; }
 
 private slots:
     void onConnected();
@@ -36,15 +36,9 @@ private slots:
     void onError(QAbstractSocket::SocketError socketError);
     void OnReadyRead();
     void handlePreGame(const QStringList &f);
-signals :
-    void SuccesFullSignUp();
-    void SuccesFull_LogIn();
-    void PreGameSearching(int waiting, int total);
-    void PreGameFound(const QStringList &opponents);
-    void PreGameFull(const QString &message);
 
 private:
-     QStringList extractFields(const QString &msg);
+    QStringList extractFields(const QString &msg);
     void handleLogin(const QStringList &fields);
     void handleSignup(const QStringList &fields);
     void handleRecover(const QStringList &fields);
@@ -53,9 +47,10 @@ private:
     QTcpSocket *m_socket;
     Player player;
     Login* loginWindow;
-    QByteArray   readBuffer;
-
-
+    QByteArray readBuffer;
+    Connect *m_connect; // Pointer to Connect instance
+    Signup *m_signup;   // Pointer to Signup instance
+    Choose_mode *m_chooseMode; // Pointer to Choose_mode instance
 };
 
 #endif // CLIENT_H

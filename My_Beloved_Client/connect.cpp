@@ -9,23 +9,19 @@
 Connect::Connect(Player& player, Client *client, QWidget *parent)
     : QMainWindow(parent),
     ui(new Ui::connect),
-    player(player),     // توجه کن! رفرنس رو اینجا ست کن
+    player(player),
     client(client),
     logWindow(new Log(player, client, this))
 {
     ui->setupUi(this);
-    connect(client, &Client::ConnectedToServer, this, &Connect::OnConnected);
-    connect(client, &Client::ErrorOccurred, this, &Connect::OnErrorOccurred);
-    connect(ui->Connect_Btn,&QPushButton::clicked,this,&Connect::Connect_Btn_clicked);
+    client->SetConnect(this); // Inform Client of this instance
+    connect(ui->Connect_Btn, &QPushButton::clicked, this, &Connect::Connect_Btn_clicked);
 }
-
 
 Connect::~Connect()
 {
     delete ui;
-    // logWindow به عنوان child والد (this) پاک می‌شود
 }
-
 
 void Connect::OnConnected()
 {
@@ -35,11 +31,8 @@ void Connect::OnConnected()
 
 void Connect::Connect_Btn_clicked()
 {
-    int  port = ui->Port_line->text().toInt();
-
-    QHostAddress host(QString(ui->Address_line->text().trimmed()));
-
-
+    int port = ui->Port_line->text().toInt();
+    QHostAddress host(ui->Address_line->text().trimmed());
     qDebug() << "Connecting to" << host.toString() << ":" << port;
     client->ConnectToServer(host, quint16(port));
 }

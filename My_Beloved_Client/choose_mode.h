@@ -16,7 +16,7 @@ class Choose_mode : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit Choose_mode(Client* client,QWidget *parent = nullptr);
+    explicit Choose_mode(Client* client, QWidget *parent = nullptr);
     ~Choose_mode();
 
     void Player2_Btn_clicked();
@@ -29,7 +29,6 @@ private:
     Client* client;
     Search_Window* SW;
     game_window* GW;
-
 };
 
 #endif // CHOOSE_MODE_H

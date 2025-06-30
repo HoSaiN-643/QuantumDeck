@@ -4,15 +4,17 @@
 #include "InputValidator.h"
 #include <QMessageBox>
 #include <QVector>
-#include <login.h>
+#include "login.h"
 
-Signup::Signup(Player& player,Client *client, QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::Signup), client(client),loginWindow(new Login(player,client))
+Signup::Signup(Player& player, Client *client, QWidget *parent)
+    : QMainWindow(parent),
+    ui(new Ui::Signup),
+    client(client),
+    loginWindow(new Login(player, client))
 {
     ui->setupUi(this);
     ui->SignUp_Btn->setEnabled(false);
 
-    // Connect all text changes to validate fields
     QVector<QTextEdit*> edits = {
         ui->First_Name_Text, ui->Last_Name_Text, ui->Phone_Text,
         ui->Email_Text, ui->Uname_Text, ui->Pwd_text, ui->Confirm_Pwd_text
@@ -20,10 +22,8 @@ Signup::Signup(Player& player,Client *client, QWidget *parent)
     for (QTextEdit* edit : edits)
         connect(edit, &QTextEdit::textChanged, this, &Signup::validateFields);
 
-    connect(client,&Client::SuccesFullSignUp,this,&Signup::OnSuccesfullSignUp);
-    connect(ui->SignUp_Btn,&QPushButton::clicked,this,&Signup::SignUp_Btn_clicked);
-
-
+    connect(ui->SignUp_Btn, &QPushButton::clicked, this, &Signup::SignUp_Btn_clicked);
+    client->SetSignup(this); // Inform Client of this instance
 }
 
 Signup::~Signup()
@@ -33,24 +33,16 @@ Signup::~Signup()
 
 void Signup::SignUp_Btn_clicked()
 {
-    QString firstName       = ui->First_Name_Text->toPlainText().trimmed();
-    QString lastName        = ui->Last_Name_Text->toPlainText().trimmed();
-    QString email           = ui->Email_Text->toPlainText().trimmed();
-    QString phone           = ui->Phone_Text->toPlainText().trimmed();
-    QString username        = ui->Uname_Text->toPlainText().trimmed();
-    QString password        = ui->Pwd_text->toPlainText().trimmed();
+    QString firstName = ui->First_Name_Text->toPlainText().trimmed();
+    QString lastName = ui->Last_Name_Text->toPlainText().trimmed();
+    QString email = ui->Email_Text->toPlainText().trimmed();
+    QString phone = ui->Phone_Text->toPlainText().trimmed();
+    QString username = ui->Uname_Text->toPlainText().trimmed();
+    QString password = ui->Pwd_text->toPlainText().trimmed();
     QString confirmPassword = ui->Confirm_Pwd_text->toPlainText().trimmed();
 
-    // … اعتبارسنجی …
-
-    // ساخت پیام با ترتیب [first][last][email][phone][username][password]
     QString data = QString("S[%1][%2][%3][%4][%5][%6]")
-                       .arg(firstName,
-                            lastName,
-                            email,
-                            phone,
-                            username,
-                            password);
+                       .arg(firstName, lastName, email, phone, username, password);
     client->WriteToServer(data);
     qDebug() << "Send sign up request to server :" << data;
 }
@@ -74,9 +66,3 @@ void Signup::OnSuccesfullSignUp()
     this->close();
     loginWindow->show();
 }
-
-
-
-
-
-

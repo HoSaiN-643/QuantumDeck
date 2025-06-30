@@ -51,7 +51,6 @@ bool MemberDatabaseManager::createMemberTable()
     return true;
 }
 
-// add a new member
 bool MemberDatabaseManager::addMember(QTcpSocket *client,
                                       const QString &firstname,
                                       const QString &lastname,
@@ -60,15 +59,18 @@ bool MemberDatabaseManager::addMember(QTcpSocket *client,
                                       const QString &username,
                                       const QString &password)
 {
+    if (!client) {
+        qWarning() << "MemberDB: Null client in addMember";
+        return false;
+    }
     if (!m_db.isOpen()) {
         qWarning() << "MemberDB: addMember called but DB is not open!";
-        client->write("S[ERROR][Database not open]");
+        client->write("S[ERROR][Database not open]\n");
         return false;
     }
 
     m_db.transaction();
 
-    // ۱) چک تکراری بودن username/email
     QSqlQuery chk(m_db);
     chk.prepare("SELECT COUNT(*) FROM members WHERE username = :u OR email = :e;");
     chk.bindValue(":u", username);
@@ -76,58 +78,43 @@ bool MemberDatabaseManager::addMember(QTcpSocket *client,
     if (!chk.exec() || !chk.next()) {
         qWarning() << "MemberDB: duplicate check failed:" << chk.lastError().text();
         m_db.rollback();
-        client->write("S[ERROR][Database query error]");
+        client->write("S[ERROR][Database query error]\n");
         return false;
     }
     if (chk.value(0).toInt() > 0) {
         m_db.rollback();
-        client->write("S[ERROR][Username or email already exists]");
+        client->write("S[ERROR][Username or email already exists]\n");
         return false;
     }
 
-    // ۲) انجام INSERT با ۶ placeholder
     QSqlQuery ins(m_db);
     const QString sql = R"(
-  INSERT INTO members
-    (firstname, lastname, email, phone, username, password)
-  VALUES
-    (:f, :l, :e, :ph, :u, :p)
-)";
+      INSERT INTO members
+        (firstname, lastname, email, phone, username, password)
+      VALUES
+        (:f, :l, :e, :ph, :u, :p)
+    )";
     ins.prepare(sql);
-    qDebug() << "MemberDB: Prepared SQL:" << ins.lastQuery();
-
-    // جایگذاری دقیقاً ۶ bindValue مطابق امضای جدید
-    ins.bindValue(":f",  firstname);
-    ins.bindValue(":l",  lastname);
-    ins.bindValue(":e",  email);
+    ins.bindValue(":f", firstname);
+    ins.bindValue(":l", lastname);
+    ins.bindValue(":e", email);
     ins.bindValue(":ph", phone);
-    ins.bindValue(":u",  username);
-    ins.bindValue(":p",  password);
-
-    qDebug() << "MemberDB: Bind values:"
-             << "f=" << firstname
-             << "l=" << lastname
-             << "e=" << email
-             << "ph="<< phone
-             << "u=" << username
-             << "p=" << password;
+    ins.bindValue(":u", username);
+    ins.bindValue(":p", password);
 
     if (!ins.exec()) {
-        qWarning() << "MemberDB: insert failed!"
-                   << "  SQL   =" << ins.lastQuery()
-              << "Error =" << ins.lastError().text();
-         m_db.rollback();
-        client->write("S[ERROR][Database insert failed]");
+        qWarning() << "MemberDB: insert failed: " << ins.lastError().text();
+        m_db.rollback();
+        client->write("S[ERROR][Database insert failed]\n");
         return false;
     }
 
     m_db.commit();
-    client->write("S[OK][Signup successful]");
+    client->write("S[OK][Signup successful]\n");
     qDebug() << "MemberDB: Member added:" << username;
     return true;
 }
 
-// update all fields of a member
 bool MemberDatabaseManager::updateMemberAllFields(QTcpSocket* socket,
                                                   const QString &oldUsername,
                                                   const QString &firstname,
@@ -137,23 +124,25 @@ bool MemberDatabaseManager::updateMemberAllFields(QTcpSocket* socket,
                                                   const QString &newUsername,
                                                   const QString &password)
 {
+    if (!socket) {
+        qWarning() << "MemberDB: Null socket in updateMemberAllFields";
+        return false;
+    }
     if (!m_db.isOpen()) {
         qWarning() << "MemberDB: updateMemberAllFields called but DB is not open!";
-        socket->write("C[CF][ERROR][Database is not open]");
+        socket->write("C[CF][ERROR][Database is not open]\n");
         return false;
     }
 
-    // begin transaction
     m_db.transaction();
 
-    // 1) fetch the stored password
     QSqlQuery q(m_db);
     q.prepare("SELECT password FROM members WHERE username = :u;");
     q.bindValue(":u", oldUsername);
     if (!q.exec() || !q.next()) {
         qWarning() << "MemberDB: user not found:" << oldUsername;
         m_db.rollback();
-        socket->write("C[CF][ERROR][User not found]");
+        socket->write("C[CF][ERROR][User not found]\n");
         return false;
     }
 
@@ -161,12 +150,11 @@ bool MemberDatabaseManager::updateMemberAllFields(QTcpSocket* socket,
     if (storedPassword != password) {
         qWarning() << "MemberDB: password incorrect for user:" << oldUsername;
         m_db.rollback();
-        socket->write("C[CF][WRONG][Incorrect password]");
+        socket->write("C[CF][WRONG][Incorrect password]\n");
         return false;
     }
 
-    // 2) check that new email/username (if changed) won't violate the UNIQUE constraint
-    if (newUsername != oldUsername || /* email changed? */ true) {
+    if (newUsername != oldUsername || true) { // Assume email might change
         QSqlQuery dup(m_db);
         dup.prepare(R"(
           SELECT COUNT(*) FROM members
@@ -177,19 +165,18 @@ bool MemberDatabaseManager::updateMemberAllFields(QTcpSocket* socket,
         dup.bindValue(":newE", email);
         dup.bindValue(":oldU", oldUsername);
         if (!dup.exec() || !dup.next()) {
-            qWarning() << "MemberDB: duplicate‐check failed:" << dup.lastError().text();
+            qWarning() << "MemberDB: duplicate-check failed:" << dup.lastError().text();
             m_db.rollback();
-            socket->write("C[CF][ERROR][Database query error]");
+            socket->write("C[CF][ERROR][Database query error]\n");
             return false;
         }
         if (dup.value(0).toInt() > 0) {
             m_db.rollback();
-            socket->write("C[CF][ERROR][Username or email already exists.]");
+            socket->write("C[CF][ERROR][Username or email already exists]\n");
             return false;
         }
     }
 
-    // 3) perform update
     QSqlQuery up(m_db);
     up.prepare(R"(
         UPDATE members SET
@@ -201,10 +188,10 @@ bool MemberDatabaseManager::updateMemberAllFields(QTcpSocket* socket,
           password  = :newPassword
         WHERE username = :oldUsername;
     )");
-    up.bindValue(":firstname",   firstname);
-    up.bindValue(":lastname",    lastname);
-    up.bindValue(":phone",       phone);
-    up.bindValue(":email",       email);
+    up.bindValue(":firstname", firstname);
+    up.bindValue(":lastname", lastname);
+    up.bindValue(":phone", phone);
+    up.bindValue(":email", email);
     up.bindValue(":newUsername", newUsername);
     up.bindValue(":newPassword", password);
     up.bindValue(":oldUsername", oldUsername);
@@ -212,22 +199,21 @@ bool MemberDatabaseManager::updateMemberAllFields(QTcpSocket* socket,
     if (!up.exec()) {
         qWarning() << "MemberDB: update failed:" << up.lastError().text();
         m_db.rollback();
-        socket->write("C[CF][ERROR][Profile update failed. Please try again later.]");
+        socket->write("C[CF][ERROR][Profile update failed]\n");
         return false;
     }
 
     if (up.numRowsAffected() > 0) {
         m_db.commit();
-        socket->write("C[CF][OK][Profile updated][Your profile was updated successfully.]");
+        socket->write("C[CF][OK][Profile updated][Your profile was updated successfully]\n");
         return true;
     } else {
         m_db.rollback();
-        socket->write("C[CF][INFO][No changes][No information was changed in your profile.]");
+        socket->write("C[CF][INFO][No changes][No information was changed in your profile]\n");
         return false;
     }
 }
 
-// helper to fetch by generic column
 QVariantMap MemberDatabaseManager::fetchMemberBy(const QString &column, const QVariant &value)
 {
     QVariantMap m;
@@ -247,11 +233,11 @@ QVariantMap MemberDatabaseManager::fetchMemberBy(const QString &column, const QV
     q.bindValue(":val", value);
     if (q.exec() && q.next()) {
         m["firstname"] = q.value("firstname").toString();
-        m["lastname"]  = q.value("lastname").toString();
-        m["email"]     = q.value("email").toString();
-        m["phone"]     = q.value("phone").toString();
-        m["username"]  = q.value("username").toString();
-        m["password"]  = q.value("password").toString();
+        m["lastname"] = q.value("lastname").toString();
+        m["email"] = q.value("email").toString();
+        m["phone"] = q.value("phone").toString();
+        m["username"] = q.value("username").toString();
+        m["password"] = q.value("password").toString();
     }
     return m;
 }
@@ -288,11 +274,11 @@ QList<QVariantMap> MemberDatabaseManager::getAllMembers()
         while (q.next()) {
             QVariantMap m;
             m["firstname"] = q.value("firstname").toString();
-            m["lastname"]  = q.value("lastname").toString();
-            m["email"]     = q.value("email").toString();
-            m["phone"]     = q.value("phone").toString();
-            m["username"]  = q.value("username").toString();
-            m["password"]  = q.value("password").toString();
+            m["lastname"] = q.value("lastname").toString();
+            m["email"] = q.value("email").toString();
+            m["phone"] = q.value("phone").toString();
+            m["username"] = q.value("username").toString();
+            m["password"] = q.value("password").toString();
             list.append(m);
         }
     }

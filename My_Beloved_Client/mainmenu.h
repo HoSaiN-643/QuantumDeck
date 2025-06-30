@@ -17,14 +17,12 @@ class MainMenu : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainMenu(Player& player,Client* client,QWidget *parent = nullptr);
+    explicit MainMenu(Player& player, Client* client, QWidget *parent = nullptr);
     ~MainMenu();
 
 private slots:
     void Choose_Mode_Btn_clicked();
-
     void History_Btn_clicked();
-
     void Change_prof_Btn_clicked();
 
 private:

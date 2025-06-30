@@ -13,19 +13,19 @@ class Signup : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit Signup(Player& player,Client *client, QWidget *parent = nullptr);
+    explicit Signup(Player& player, Client *client, QWidget *parent = nullptr);
     ~Signup();
 
+    void OnSuccesfullSignUp(); // Expose for direct call
+
 private slots:
-    void SignUp_Btn_clicked();  // Called when user clicks the sign up button
+    void SignUp_Btn_clicked();
     void validateFields();
-    void OnSuccesfullSignUp();    // Called on every field change to enable/disable the button
 
 private:
     Ui::Signup *ui;
-    Client     *client;
-    Login* loginWindow;
-
+    Client *client;
+    Login *loginWindow;
 };
 
 #endif // SIGNUP_H

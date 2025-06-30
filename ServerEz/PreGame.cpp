@@ -1,9 +1,8 @@
-// pregame.cpp
 #include "pregame.h"
 #include <QString>
 
 PreGame::PreGame(int count,
-                 QPair<QTcpSocket*,QString> p,
+                 QPair<QTcpSocket*, QString> p,
                  QObject *parent)
     : QObject(parent),
     PlayerCnt(count),
@@ -13,13 +12,17 @@ PreGame::PreGame(int count,
     sendSearching();
 }
 
-void PreGame::AddPlayer(QPair<QTcpSocket*,QString> p)
+void PreGame::AddPlayer(QPair<QTcpSocket*, QString> p)
 {
+    if (!p.first) {
+        qDebug() << "Attempted to add null client to PreGame";
+        return;
+    }
     Players.append(p);
     ++WaitingPlayers;
-    if (WaitingPlayers < PlayerCnt)
+    if (WaitingPlayers < PlayerCnt) {
         sendSearching();
-    else {
+    } else {
         IsServerFull = true;
         sendFound();
     }
@@ -27,30 +30,32 @@ void PreGame::AddPlayer(QPair<QTcpSocket*,QString> p)
 
 void PreGame::sendSearching()
 {
-    // پیام: P[count][waiting][Searching for a match
-    QString msg = QString("P[%1][%2][Searching for a match]")
-                      .arg(PlayerCnt)
-                      .arg(WaitingPlayers);
+    QString msg = QString("P[%1][%2][Searching for a match]\n")
+    .arg(PlayerCnt)
+        .arg(WaitingPlayers);
     QByteArray raw = msg.toUtf8();
-    for (auto &pr : Players)
-        pr.first->write(raw);
+    for (auto &pr : Players) {
+        if (pr.first) {
+            pr.first->write(raw);
+        }
+    }
 }
 
 void PreGame::sendFound()
 {
-    // هر بازیکن، لیست بقیه را می‌گیرد
     for (auto &me : Players) {
+        if (!me.first) continue;
         QStringList others;
-        for (auto &peer : Players)
-            if (peer.first != me.first)
+        for (auto &peer : Players) {
+            if (peer.first && peer.first != me.first) {
                 others << peer.second;
-
+            }
+        }
         QString msg = QString("P[%1][Found]").arg(PlayerCnt);
-        for (auto &name : others)
+        for (const auto &name : others) {
             msg += QString("[%1]").arg(name);
+        }
         msg += "\n";
-
         me.first->write(msg.toUtf8());
     }
 }
-
