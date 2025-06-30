@@ -32,11 +32,7 @@ void Client::DisconnectFromServer()
 { if (m_socket->state() == QAbstractSocket::ConnectedState)
         m_socket->disconnectFromHost(); }
 
-void Client::WriteToServer(const QString &msg)
-{
-    if (m_socket->state() == QAbstractSocket::ConnectedState)
-        m_socket->write(msg.toUtf8());
-}
+
 
 void Client::onConnected()    { qDebug() << "Connected"; emit ConnectedToServer(); }
 void Client::onDisconnected() { qDebug() << "Disconnected"; emit DisconnectedFromServer(); }
@@ -46,57 +42,52 @@ void Client::onError(QAbstractSocket::SocketError) {
     emit ErrorOccurred(err);
 }
 
-QStringList Client::extractFields(const QString &msg) const
+QStringList Client::extractFields(const QString &msg)
 {
-    QStringList out;
-    int pos = 0;
-    while (true) {
-        int b = msg.indexOf('[', pos);
-        if (b < 0) break;
-        int e = msg.indexOf(']', b);
-        if (e < 0) break;
-        out << msg.mid(b+1, e-b-1);
-        pos = e + 1;
+    QStringList result;
+    int start = msg.indexOf('[');
+    while (start != -1) {
+        int end = msg.indexOf(']', start);
+        if (end == -1) break;
+        result << msg.mid(start + 1, end - start - 1);
+        start = msg.indexOf('[', end);
     }
-    return out;
+    return result;
 }
 
 void Client::OnReadyRead()
 {
-    // 1) Read all available bytes once
-    readBuffer.append(m_socket->readAll());
+    // 1) کل داده رو یکجا بخون (نه append)
+    readBuffer = m_socket->readAll();
 
-    // 2) While there's at least one '\n' in our buffer, extract complete lines
-    int idx = -1;
-    while ((idx = readBuffer.indexOf('\n')) != -1) {
-        // Extract up to (but not including) '\n'
-        QByteArray line = readBuffer.left(idx);
-        // Remove that line + the '\n' from the buffer
-        readBuffer.remove(0, idx + 1);
 
-        if (line.isEmpty())
-            continue;
+    QByteArray line =readBuffer;
 
-        // 3) Parse command + payload from this single line
-        char cmd = line.at(0);                      // first byte = command
-        QString payload = QString::fromUtf8(line.mid(1));
-        QStringList fields = extractFields(payload);
-        if (fields.isEmpty())
-            continue;
 
-        // 4) Dispatch based on command
-        switch (cmd) {
-            case 'L': handleLogin(fields);      break;
-            case 'S': handleSignup(fields);     break;
-            case 'R': handleRecover(fields);    break;
-            case 'P': handlePreGame(fields);    break;
-            case 'X': handleErrorCmd(fields);   break;
-            default:
-                // unknown command – you might log or ignore
-                break;
-        }
+    readBuffer.clear();
+
+    // 4) اگر خالیه ولش کن
+    if (line.isEmpty())
+        return;
+
+    // 5) پردازش مثل قبل
+    char cmd        = line.at(0);
+    QByteArray body = line.mid(1);
+    QString payload = QString::fromUtf8(body);
+    QStringList fields = extractFields(payload);
+    if (fields.isEmpty())
+        return;
+
+    switch (cmd) {
+    case 'L': handleLogin(fields);    break;
+    case 'S': handleSignup(fields);   break;
+    case 'R': handleRecover(fields);  break;
+    case 'P': handlePreGame(fields);  break;
+    case 'X': handleErrorCmd(fields); break;
+    default:  break;
     }
 }
+
 
 void Client::handleLogin(const QStringList &fields) {
     // fields: [OK|ERR][msg][fn][ln][em][ph][un][pw]
@@ -122,7 +113,7 @@ void Client::handleLogin(const QStringList &fields) {
     player.SetInfo(fields[2], fields[3],
                    fields[4], fields[5],
                    fields[6], fields[7]);
-    emit SuccesFull_LogIn();
+    loginWindow->Open_menu();
 }
 
 void Client::handleSignup(const QStringList &fields) {
@@ -167,6 +158,13 @@ void Client::handleErrorCmd(const QStringList &fields) {
 
 
 Player& Client::GetPlayer() { return player; }
+
+void Client::WriteToServer(const QString &data)
+{
+    QByteArray out = data.toUtf8();
+
+    m_socket->write(out);
+}
 
 void Client::handlePreGame(const QStringList &f) {
     // f[0] = total، f[1] = وضعیت، f[2...] = آرگومان‌ها

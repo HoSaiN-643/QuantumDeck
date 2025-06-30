@@ -20,7 +20,7 @@ Login::Login(Player& player, Client *client, QWidget *parent)
     connect(ui->Log_Uname_Radio, &QRadioButton::clicked, this, &Login::Update_Login_Btn);
     connect(ui->UE_text, &QTextEdit::textChanged, this, &Login::Update_Login_Btn);
     connect(ui->Pwd_text, &QTextEdit::textChanged, this, &Login::Update_Login_Btn);
-    connect(client, &Client::SuccesFull_LogIn, this, &Login::On_Succesful_Login, Qt::UniqueConnection);
+    // connect(client, &Client::SuccesFull_LogIn, this, &Login::On_Succesful_Login, Qt::UniqueConnection);
     connect(ui->Login_Btn,&QPushButton::clicked,this,&Login::Login_Btn_Clicked);
 
 }
@@ -29,7 +29,14 @@ Login::~Login()
 {
     delete ui;
 }
+void Login::Open_menu() {
 
+    if (!menuWindow) {
+        menuWindow = new MainMenu(player, client);
+    }
+    menuWindow->show();
+    this->close();
+}
 void Login::Update_Login_Btn()
 {
     bool RadioChecked = ui->Log_Email_Radio->isChecked() || ui->Log_Uname_Radio->isChecked();
@@ -82,13 +89,4 @@ void Login::Login_Btn_Clicked()
 
 
 
-void Login::On_Succesful_Login()
-{
 
-    if (!menuWindow) {
-        menuWindow = new MainMenu(player, client);
-    }
-    menuWindow->show();
-    this->close();
-
-}

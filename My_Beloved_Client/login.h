@@ -16,10 +16,11 @@ public:
     explicit Login(Player& player, Client *client, QWidget *parent = nullptr);
     ~Login();
 
+    void Open_menu();
 private slots:
     void Update_Login_Btn();
     void Login_Btn_Clicked();
-    void On_Succesful_Login();
+    // void On_Succesful_Login();
 
 private:
     Ui::Login *ui;

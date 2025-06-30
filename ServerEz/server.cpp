@@ -112,7 +112,7 @@ void SERVER::handleLogin(QTcpSocket *client, const QStringList &f)
 {
     // ۱) بررسی تعداد فیلدها
     if (f.size() != 3) {
-        client->write("L[ERROR][BadFormat]\n");
+        client->write("L[ERROR][BadFormat]");
         return;
     }
 
@@ -125,24 +125,24 @@ void SERVER::handleLogin(QTcpSocket *client, const QStringList &f)
     if      (type == "E") member = db.GetMemberByEmail(id);
     else if (type == "U") member = db.GetMemberByUsername(id);
     else {
-        client->write("L[ERROR][BadLoginType]\n");
+        client->write("L[ERROR][BadLoginType]");
         return;
     }
 
     // ۳) بررسی وجود عضو
     if (member.isEmpty()) {
-        client->write("L[FAIL][Member not found]\n");
+        client->write("L[FAIL][Member not found]");
     }
     // ۴) بررسی صحت کلمه‌عبور
     else if (member.value("password").toString() != pwd) {
-        client->write("L[WRONG][Wrong password]\n");
+        client->write("L[WRONG][Wrong password]");
     }
     // ۵) همه‌چیز اوکی است ⇒ ارسال پاسخ OK با فیلدهای کامل
     else {
-        // L[OK][successfull login][fn][ln][em][ph][un][pw]\n
+        // L[OK][successfull login][fn][ln][em][ph][un][pw]
         QString resp = QString(
                            "L[OK][successfull login]"
-                           "[%1][%2][%3][%4][%5][%6]\n"
+                           "[%1][%2][%3][%4][%5][%6]"
                            ).arg(
                                member.value("firstname").toString(),
                                member.value("lastname").toString(),
@@ -229,36 +229,32 @@ void SERVER::handleUpdateProfile(QTcpSocket *client, const QStringList &f)
 // فرمت: P[numPlayers]
 void SERVER::handlePreGame(QTcpSocket *client, const QStringList &f)
 {
-    // فرمت درست: P[<wantedPlayers>]
     if (f.size() != 1) {
-        client->write("P[ERROR][BadFormat]");
+        client->write("P[ERROR][BadFormat]\n");
         return;
     }
     bool ok = false;
     int wantedPlayers = f[0].toInt(&ok);
     if (!ok || wantedPlayers < 2) {
-        client->write("P[ERROR][BadMode]");
+        client->write("P[ERROR][BadMode]\n");
         return;
     }
 
-    // pairing socket با نام کاربری
     auto pair = qMakePair(client, clients.value(client));
 
-    // اگر هنوز لابی‌ نداریم، بساز
     if (!lobby) {
         lobby = new PreGame(wantedPlayers, pair, this);
     }
-    // اگر هست ولی فول نشده، اضافه کن
     else if (!lobby->IsServerFull) {
         lobby->AddPlayer(pair);
     }
-    // اگر هست و فول است، ارور بده
     else {
-        QString resp = QString("P[%1][FULL][Server is full]")
+        QString resp = QString("P[%1][FULL][Server is full]\n")
         .arg(QString::number(wantedPlayers));
         client->write(resp.toUtf8());
     }
 }
+
 
 
 //==============================================================================
