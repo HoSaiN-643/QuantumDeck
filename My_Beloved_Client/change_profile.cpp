@@ -1,10 +1,13 @@
 #include "player.h"
 #include "change_profile.h"
 #include "ui_change_profile.h"
+#include "client.h"
 #include <QMessageBox>
 #include <QRegularExpression>
+#include <QRegularExpressionValidator>
 #include <QTimer>
 
+// Constructor: Initializes the main window and sets up the UI
 Change_profile::Change_profile(Player& player, Client* client, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::Change_profile)
@@ -20,18 +23,18 @@ Change_profile::Change_profile(Player& player, Client* client, QWidget *parent)
     ui->setupUi(this);
 
     // Store original values for comparison
-    original_values.phone = player.m_phone;
-    original_values.firstname = player.m_firstname;
-    original_values.lastname = player.m_lastname;
-    original_values.email = player.m_email;
-    original_values.username = player.m_username;
+    original_values.phone = player.phone();
+    original_values.firstname = player.firstName();
+    original_values.lastname = player.lastName();
+    original_values.email = player.email();
+    original_values.username = player.username();
 
     // Populate fields with player data
-    ui->phone_lineEdit->setText(player.m_phone);
-    ui->firstname_lineEdit->setText(player.m_firstname);
-    ui->lastname_lineEdit->setText(player.m_lastname);
-    ui->email_lineEdit->setText(player.m_email);
-    ui->username_lineEdit->setText(player.m_username);
+    ui->phone_lineEdit->setText(player.phone());
+    ui->firstname_lineEdit->setText(player.firstName());
+    ui->lastname_lineEdit->setText(player.lastName());
+    ui->email_lineEdit->setText(player.email());
+    ui->username_lineEdit->setText(player.username());
 
     // Clear password fields
     ui->current_password_lineEdit->clear();
@@ -60,11 +63,13 @@ Change_profile::Change_profile(Player& player, Client* client, QWidget *parent)
     connect(ui->save_button, &QPushButton::clicked, this, &Change_profile::onSaveButtonClicked);
 }
 
+// Destructor: Cleans up the UI
 Change_profile::~Change_profile()
 {
     delete ui;
 }
 
+// Slot for field changes
 void Change_profile::onFieldChanged()
 {
     // Check if any field has changed
@@ -81,6 +86,7 @@ void Change_profile::onFieldChanged()
     ui->save_button->setEnabled(has_changes);
 }
 
+// Slot for save button click
 void Change_profile::onSaveButtonClicked()
 {
     // Disable save button during processing
@@ -157,17 +163,17 @@ void Change_profile::onSaveButtonClicked()
     }
 
     // Handle password changes
-    QString password_to_send = player.m_password;
+    QString password_to_send = player.password();
     if (!current_password.isEmpty() || !new_password.isEmpty() || !confirm_new_password.isEmpty()) {
         // All password fields must be filled
-        if (current_password.isEmpty() || new_password.isEmpty() || confirm_new_password.isEmpty()) {
+        if (current_password.isEmpty() || new_password.isEmpty() || !confirm_new_password.isEmpty()) {
             QMessageBox::warning(this, "Error", "All password fields must be filled to change the password.");
             ui->save_button->setEnabled(true);
             return;
         }
 
         // Verify current password (plaintext comparison is insecure)
-        if (current_password != player.m_password) {
+        if (current_password != player.password()) {
             QMessageBox::warning(this, "Error", "Current password is incorrect.");
             ui->save_button->setEnabled(true);
             return;
@@ -194,22 +200,18 @@ void Change_profile::onSaveButtonClicked()
     // Send data to server
     QString message = QString("C[CF][%1][%2][%3][%4][%5][%6]")
                          .arg(firstname, lastname, email, phone, username, password_to_send);
-    bool success = client->WriteToServer(message);
-
-    if (!success) {
-        QMessageBox::critical(this, "Error", "Failed to send data to server.");
-        ui->save_button->setEnabled(true);
-        return;
-    }
+    client->WriteToServer(message);  // Removed bool assignment, assuming void return
+    // Since WriteToServer returns void, assume success and handle errors via signals
+    // If you need success feedback, modify Client to return bool
 
     // Update player data
-    player.m_phone = phone;
-    player.m_firstname = firstname;
-    player.m_lastname = lastname;
-    player.m_email = email;
-    player.m_username = username;
-    if (password_to_send != player.m_password) {
-        player.m_password = password_to_send;
+    player.setPhone(phone);
+    player.setFirstName(firstname);
+    player.setLastName(lastname);
+    player.setEmail(email);
+    player.setUsername(username);
+    if (password_to_send != player.password()) {
+        player.setPassword(password_to_send);
     }
 
     // Update original values

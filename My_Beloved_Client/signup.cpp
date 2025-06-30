@@ -72,24 +72,27 @@ void Signup::onSignupButtonClicked()
         return;
     }
 
-    // Validate email and phone
-    QString error = InputValidator::validateEmail(email);
-    if (!error.isEmpty()) {
-        QMessageBox::warning(this, "Error", error);
+    // Validate email
+    QString emailError = InputValidator::validateEmail(email);
+    if (!emailError.isEmpty()) {
+        QMessageBox::warning(this, "Error", emailError);
         return;
     }
-    error = InputValidator::validatePhone(phone);
-    if (!error.isEmpty()) {
-        QMessageBox::warning(this, "Error", error);
+
+    // Validate phone
+    QString phoneError = InputValidator::validatePhone(phone);
+    if (!phoneError.isEmpty()) {
+        QMessageBox::warning(this, "Error", phoneError);
         return;
     }
 
     // Validate password
-    QString error = InputValidator::validatePassword(password);
-    if (!error.isEmpty()) {
-        QMessageBox::warning(this, "Error", "Password: " + error);
+    QString passwordError = InputValidator::validatePassword(password);
+    if (!passwordError.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Password: " + passwordError);
         return;
     }
+
     if (password != confirm_password) {
         QMessageBox::warning(this, "Error", "Password and confirmation do not match.");
         return;

@@ -1,7 +1,10 @@
-#include "player.h"
-#include <QJsonValue>
 
-// ctor
+#include <QJsonValue>
+#include "player.h"
+
+// constructor
+Player::Player() : m_firstname(""), m_lastname(""), m_email(""), m_phone(""), m_username(""), m_password("") {}
+
 Player::Player(const QString &firstname,
                const QString &lastname,
                const QString &email,

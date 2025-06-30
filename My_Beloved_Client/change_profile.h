@@ -1,6 +1,6 @@
 #ifndef CHANGE_PROFILE_H
 #define CHANGE_PROFILE_H
-
+#include "client.h"
 #include <QMainWindow>
 #include <QString>
 #include"InputValidator.h"

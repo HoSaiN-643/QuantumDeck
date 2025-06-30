@@ -8,7 +8,10 @@
 class Player
 {
 public:
-    // ctor شش‌پارامتری
+    // Default constructor
+    Player();
+
+    // Six-parameter constructor
     explicit Player(const QString &firstname,
                     const QString &lastname,
                     const QString &email,
@@ -36,17 +39,12 @@ public:
 
     QString fullName() const;
 
-
-
-
-
-
-    // به JSON تبدیل کند
+    // Convert to JSON
     QJsonObject toJson() const;
-    // از JSON بسازد
+    // Create from JSON
     static Player fromJson(const QJsonObject &obj);
 
-    // اپراتورهای مقایسه
+    // Comparison operators
     bool operator==(const Player &other) const;
     bool operator!=(const Player &other) const { return !(*this == other); }
 
