@@ -24,6 +24,8 @@ public:
 private slots:
     // Slot for login button click
     void onLoginButtonClicked();
+    // Slot for forgot password button click
+    void onForgotPasswordButtonClicked();
 
 private:
     Ui::Login *ui;
