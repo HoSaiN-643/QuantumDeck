@@ -17,7 +17,7 @@ public:
     explicit Connect(Player& player, Client *client, QWidget *parent = nullptr);
     ~Connect();
 
-    // Expose methods for direct calls
+
     void OnConnected();
     void OnErrorOccurred(const QString &errorString);
 

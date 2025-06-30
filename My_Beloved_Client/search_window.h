@@ -28,7 +28,7 @@ private slots:
 private:
     Ui::Search_Window *ui;
     QTimer *dotTimer;
-    int dotCount;            // چند تا نقطه الان نمایش داده شود (۰–۳)
+    int dotCount;
     int currentPlayers;
     int totalPlayers;
     Client* client;

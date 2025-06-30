@@ -1,10 +1,9 @@
-#include "login.h"       // <<<<<< این خط باید همیشه اول باشه!
+#include "login.h"
 #include "ui_login.h"
 #include "client.h"
 #include "InputValidator.h"
 #include <QMessageBox>
 #include "mainmenu.h"
-
 
 Login::Login(Player& player, Client *client, QWidget *parent)
     : QMainWindow(parent),
@@ -20,73 +19,65 @@ Login::Login(Player& player, Client *client, QWidget *parent)
     connect(ui->Log_Uname_Radio, &QRadioButton::clicked, this, &Login::Update_Login_Btn);
     connect(ui->UE_text, &QTextEdit::textChanged, this, &Login::Update_Login_Btn);
     connect(ui->Pwd_text, &QTextEdit::textChanged, this, &Login::Update_Login_Btn);
-    // connect(client, &Client::SuccesFull_LogIn, this, &Login::On_Succesful_Login, Qt::UniqueConnection);
-    connect(ui->Login_Btn,&QPushButton::clicked,this,&Login::Login_Btn_Clicked);
-
+    connect(ui->Login_Btn, &QPushButton::clicked, this, &Login::Login_Btn_Clicked);
 }
 
 Login::~Login()
 {
     delete ui;
 }
-void Login::Open_menu() {
 
+void Login::Open_menu()
+{
     if (!menuWindow) {
         menuWindow = new MainMenu(player, client);
     }
     menuWindow->show();
     this->close();
 }
+
 void Login::Update_Login_Btn()
 {
-    bool RadioChecked = ui->Log_Email_Radio->isChecked() || ui->Log_Uname_Radio->isChecked();
-    bool TextChecked = !ui->Pwd_text->toPlainText().isEmpty() && !ui->UE_text->toPlainText().isEmpty();
+    bool radioChecked = ui->Log_Email_Radio->isChecked() || ui->Log_Uname_Radio->isChecked();
+    bool textFilled = !ui->Pwd_text->toPlainText().trimmed().isEmpty() &&
+                      !ui->UE_text->toPlainText().trimmed().isEmpty();
 
-    if(ui->Log_Email_Radio->isChecked() || ui->Log_Uname_Radio->isChecked()) {
-    ui->UE_Label_2->setText(ui->Log_Email_Radio->isChecked() ? "Email" : "Username");
+    // Update label based on radio button selection
+    if (ui->Log_Email_Radio->isChecked() || ui->Log_Uname_Radio->isChecked()) {
+        ui->UE_Label_2->setText(ui->Log_Email_Radio->isChecked() ? "Email" : "Username");
     }
-    if( RadioChecked && TextChecked) {
-        ui->Login_Btn->setEnabled(true);
-    }
-    else {
-        ui->Login_Btn->setEnabled(false);
-    }
+
+    // Enable login button only if radio button is selected and fields are filled
+    ui->Login_Btn->setEnabled(radioChecked && textFilled);
 }
 
 void Login::Login_Btn_Clicked()
 {
-
     QString inputText = ui->UE_text->toPlainText().trimmed();
     QString password = ui->Pwd_text->toPlainText().trimmed();
+    QString type = ui->Log_Email_Radio->isChecked() ? "E" : "U";
 
-      QString type = ui->Log_Email_Radio->isChecked() ? "E" : "U";
-
-    // Re-validate before sending
+    // Validate inputs and collect errors
     QStringList errors;
     if (ui->Log_Email_Radio->isChecked()) {
-        if (auto err = InputValidator::validateEmail(inputText); !err.isEmpty())
+        if (QString err = InputValidator::validateEmail(inputText); !err.isEmpty())
             errors << "Email: " + err;
+    } else {
+        if (QString err = InputValidator::validateUsername(inputText); !err.isEmpty())
+            errors << "Username: " + err;
     }
-    else if (ui->Log_Uname_Radio->isChecked()) {
-        if (inputText.isEmpty())
-            errors << "Username cannot be empty";
-    }
-    if (auto err = InputValidator::validatePassword(password); !err.isEmpty())
+    if (QString err = InputValidator::validatePassword(password); !err.isEmpty())
         errors << "Password: " + err;
 
+    // Display errors if any
     if (!errors.isEmpty()) {
-        QMessageBox::warning(this, "Invalid Login", errors.join("\n"));
+        QString errorText = "Please fix the following errors:\n\n";
+        errorText += errors.join("\n");
+        QMessageBox::warning(this, "Invalid Input", errorText);
         return;
     }
 
-    // Send data in correct format
+    // Send data to server if inputs are valid
     QString data = QString("L[%1][%2][%3]").arg(type, inputText, password);
     client->WriteToServer(data);
-    return;
-    // You can also reset the form or add any additional actions here
 }
-
-
-
-
-

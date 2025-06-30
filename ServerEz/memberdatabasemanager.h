@@ -25,20 +25,14 @@ public:
                    const QString &username,
                    const QString &password);
 
-    bool updateMemberAllFields(QTcpSocket *socket,
-                               const QString &oldUsername,
-                               const QString &firstname,
-                               const QString &lastname,
-                               const QString &phone,
-                               const QString &email,
-                               const QString &newUsername,
-                               const QString &password);
+
 
     QVariantMap GetMemberByUsername(const QString &username);
     QVariantMap GetMemberByEmail(const QString &email);
     QVariantMap GetMemberByPhone(const QString &phone);
     QList<QVariantMap> getAllMembers();
 
+    bool updateMemberAllFields(QTcpSocket *socket, const QString &oldUsername, const QString &firstname, const QString &lastname, const QString &phone, const QString &email, const QString &newUsername, const QString &newPassword);
 private:
     QString m_dbPath;
     QString m_connectionName;

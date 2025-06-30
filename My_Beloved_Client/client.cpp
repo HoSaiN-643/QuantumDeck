@@ -99,9 +99,45 @@ void Client::OnReadyRead()
     case 'R': handleRecover(fields); break;
     case 'P': handlePreGame(fields); break;
     case 'X': handleErrorCmd(fields); break;
+    case 'C': handleUpdateProfile(fields); break;
     default: break;
     }
 }
+void Client::handleUpdateProfile(const QStringList &fields)
+{
+    if (fields.size() != 9  || fields[0] != "CF") {
+        QMessageBox::information(loginWindow, tr("Update Profile Failed"), tr("Invalid response format from server!"));
+        return;
+    }
+
+    QString status = fields[1];
+
+    if (status == "OK") {
+
+        QMessageBox::information(loginWindow, fields[1], fields[2]);
+        // به‌روزرسانی اطلاعات بازیکن با داده‌های جدید دریافت‌شده از سرور
+        // فرض می‌کنیم فیلدهای 3 تا 8 به ترتیب firstname, lastname, email, phone, username, password هستند
+        player.SetInfo(fields[3], fields[4], fields[5], fields[6], fields[7], fields[8]);
+    }
+    else if (status == "NOTFOUND") {
+        QString message = (fields.size() >= 4) ? fields[3] : tr("Old username not found in database.");
+        QMessageBox::information(loginWindow, tr("Update Profile Failed"), message);
+    }
+    else if (status == "DUPLICATE") {
+        QString message = (fields.size() >= 4) ? fields[3] : tr("New username already exists.");
+        QMessageBox::information(loginWindow, tr("Update Profile Failed"), message);
+    }
+    else if (status == "ERROR") {
+        QString message = (fields.size() >= 4) ? fields[3] : tr("An error occurred while updating profile.");
+        QMessageBox::information(loginWindow, tr("Update Profile Failed"), message);
+    }
+    else {
+        QString message = (fields.size() >= 4) ? fields[3] : tr("Unknown response from server.");
+        QMessageBox::information(loginWindow, tr("Update Profile Failed"), message);
+    }
+}
+
+
 
 void Client::handleLogin(const QStringList &fields)
 {
@@ -161,6 +197,7 @@ Player& Client::GetPlayer()
 void Client::WriteToServer(const QString &data)
 {
     QByteArray out = data.toUtf8();
+    qDebug() << "sending data to sever : " << data;
     m_socket->write(out);
 }
 

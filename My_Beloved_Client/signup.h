@@ -1,12 +1,13 @@
-#ifndef SIGNUP_H
-#define SIGNUP_H
-
+#pragma once
 #include <QMainWindow>
+#include "player.h"
+#include "client.h"
 
-namespace Ui { class Signup; }
-class Client;
-class Login;
-class Player;
+class Login; // Forward declaration
+
+namespace Ui {
+class Signup;
+}
 
 class Signup : public QMainWindow
 {
@@ -16,7 +17,8 @@ public:
     explicit Signup(Player& player, Client *client, QWidget *parent = nullptr);
     ~Signup();
 
-    void OnSuccesfullSignUp(); // Expose for direct call
+public slots:
+    void OnSuccesfullSignUp();
 
 private slots:
     void SignUp_Btn_clicked();
@@ -27,5 +29,3 @@ private:
     Client *client;
     Login *loginWindow;
 };
-
-#endif // SIGNUP_H

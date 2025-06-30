@@ -1,12 +1,13 @@
-#ifndef LOGIN_H
-#define LOGIN_H
-
+#pragma once
 #include <QMainWindow>
-#include "mainmenu.h"
-namespace Ui { class Login; }
-class Client;
+#include "player.h"
+#include "client.h"
+
 class MainMenu;
-class Player;
+
+namespace Ui {
+class Login;
+}
 
 class Login : public QMainWindow
 {
@@ -16,17 +17,16 @@ public:
     explicit Login(Player& player, Client *client, QWidget *parent = nullptr);
     ~Login();
 
+public slots:
     void Open_menu();
+
 private slots:
     void Update_Login_Btn();
     void Login_Btn_Clicked();
-    // void On_Succesful_Login();
 
 private:
     Ui::Login *ui;
-    Client     *client;
-    Player&    player;
-    MainMenu*  menuWindow;
+    Player& player;
+    Client *client;
+    MainMenu *menuWindow;
 };
-
-#endif // LOGIN_H

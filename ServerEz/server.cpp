@@ -83,13 +83,13 @@ void SERVER::OnReadyRead()
     const char cmd = raw.at(0);
     const QString payload = QString::fromUtf8(raw.mid(1));
     const QStringList f = extractFields(payload);
-    qDebug() << "Type received: " << cmd;
+    qDebug() << "Type received:" << cmd;
 
     switch (cmd) {
     case 'L': handleLogin(client, f); break;
     case 'S': handleSignup(client, f); break;
     case 'R': handleRecover(client, f); break;
-    case 'C': handleUpdateProfile(client, f); break;
+    case 'C': handleClientCommand(client, f); break;
     case 'P': handlePreGame(client, f); break;
     default:  handleUnknown(client); break;
     }
@@ -172,19 +172,35 @@ void SERVER::handleRecover(QTcpSocket *client, const QStringList &f)
     }
 }
 
-void SERVER::handleUpdateProfile(QTcpSocket *client, const QStringList &f)
+
+
+void SERVER::handleClientCommand(QTcpSocket *client, const QStringList &fields)
 {
-    if (f.isEmpty() || f[0] != "CF") {
-        client->write("C[ERROR][Bad format received]\n");
-        return;
+    if(fields[0].toUpper() == "CF") {
+
+        if (fields.size() != 8) {
+            client->write("S[CF][ERROR][Invalid number of fields]");
+            client->flush();
+            return;
+        }
+
+        QVariantMap member = db.GetMemberByUsername(fields[7]);
+        if(member.isEmpty()) {
+            client->write("C[CF][WRONG][member not found]");
+        }
+        else {
+            if(db.updateMemberAllFields(client,fields[7],fields[1],fields[2],fields[3],fields[4],fields[5],fields[7])) {
+                client->write(QString("C[CF][OK][information updated succesfully][%1][%2][%3][%4][%5][%6]").arg(
+                   fields[3],fields[4],fields[5],fields[6],fields[7],fields[8]
+                    ).toUtf8());
+                client->flush();
+                return ;
+        }
     }
-    if (f.size() != 8) {
-        client->write("C[CF][ERROR][Bad format received]\n");
-        qDebug() << "Bad format in C[CF]";
-        return;
-    }
-    db.updateMemberAllFields(client, f[1], f[2], f[3], f[4], f[5], f[6], f[7]);
+
 }
+
+
 
 void SERVER::handlePreGame(QTcpSocket *client, const QStringList &f)
 {

@@ -13,4 +13,3 @@ public:
     static QString validateName(const QString& name, const QString& fieldName);
     static const QStringList commonPasswords;
 };
-

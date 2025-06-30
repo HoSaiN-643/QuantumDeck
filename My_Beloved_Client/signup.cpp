@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QVector>
 #include "login.h"
+#include <QDebug>
 
 Signup::Signup(Player& player, Client *client, QWidget *parent)
     : QMainWindow(parent),
@@ -15,6 +16,7 @@ Signup::Signup(Player& player, Client *client, QWidget *parent)
     ui->setupUi(this);
     ui->SignUp_Btn->setEnabled(false);
 
+
     QVector<QTextEdit*> edits = {
         ui->First_Name_Text, ui->Last_Name_Text, ui->Phone_Text,
         ui->Email_Text, ui->Uname_Text, ui->Pwd_text, ui->Confirm_Pwd_text
@@ -23,7 +25,7 @@ Signup::Signup(Player& player, Client *client, QWidget *parent)
         connect(edit, &QTextEdit::textChanged, this, &Signup::validateFields);
 
     connect(ui->SignUp_Btn, &QPushButton::clicked, this, &Signup::SignUp_Btn_clicked);
-    client->SetSignup(this); // Inform Client of this instance
+    client->SetSignup(this);
 }
 
 Signup::~Signup()
@@ -33,6 +35,7 @@ Signup::~Signup()
 
 void Signup::SignUp_Btn_clicked()
 {
+
     QString firstName = ui->First_Name_Text->toPlainText().trimmed();
     QString lastName = ui->Last_Name_Text->toPlainText().trimmed();
     QString email = ui->Email_Text->toPlainText().trimmed();
@@ -41,14 +44,42 @@ void Signup::SignUp_Btn_clicked()
     QString password = ui->Pwd_text->toPlainText().trimmed();
     QString confirmPassword = ui->Confirm_Pwd_text->toPlainText().trimmed();
 
+
+    QStringList errors;
+
+    QString errorMsg;
+    if (!(errorMsg = InputValidator::validateName(firstName, "firstname")).isEmpty())
+        errors << errorMsg;
+    if (!(errorMsg = InputValidator::validateName(lastName, "lastname")).isEmpty())
+        errors << errorMsg;
+    if (!(errorMsg = InputValidator::validateEmail(email)).isEmpty())
+        errors << errorMsg;
+    if (!(errorMsg = InputValidator::validatePhone(phone)).isEmpty())
+        errors << errorMsg;
+    if (!(errorMsg = InputValidator::validateUsername(username)).isEmpty())
+        errors << errorMsg;
+    if (!(errorMsg = InputValidator::validatePassword(password)).isEmpty())
+        errors << errorMsg;
+    if (password != confirmPassword)
+        errors << "confirm password and password are not same";
+
+    if (!errors.isEmpty()) {
+        QString errorText = "please fix the following errors:\n\n";
+        errorText += errors.join("\n");
+        QMessageBox::warning(this, "Invalid input", errorText);
+        return;
+    }
+
+
     QString data = QString("S[%1][%2][%3][%4][%5][%6]")
                        .arg(firstName, lastName, email, phone, username, password);
     client->WriteToServer(data);
-    qDebug() << "Send sign up request to server :" << data;
+
 }
 
 void Signup::validateFields()
 {
+
     bool allFilled =
         !ui->First_Name_Text->toPlainText().trimmed().isEmpty() &&
         !ui->Last_Name_Text->toPlainText().trimmed().isEmpty() &&
@@ -58,7 +89,30 @@ void Signup::validateFields()
         !ui->Pwd_text->toPlainText().trimmed().isEmpty() &&
         !ui->Confirm_Pwd_text->toPlainText().trimmed().isEmpty();
 
-    ui->SignUp_Btn->setEnabled(allFilled);
+
+    bool allValid = true;
+    QString temp;
+    if (allFilled) {
+        if (!(temp = InputValidator::validateName(ui->First_Name_Text->toPlainText().trimmed(), "نام")).isEmpty())
+            allValid = false;
+        if (!(temp = InputValidator::validateName(ui->Last_Name_Text->toPlainText().trimmed(), "نام خانوادگی")).isEmpty())
+            allValid = false;
+        if (!(temp = InputValidator::validateEmail(ui->Email_Text->toPlainText().trimmed())).isEmpty())
+            allValid = false;
+        if (!(temp = InputValidator::validatePhone(ui->Phone_Text->toPlainText().trimmed())).isEmpty())
+            allValid = false;
+        if (!(temp = InputValidator::validateUsername(ui->Uname_Text->toPlainText().trimmed())).isEmpty())
+            allValid = false;
+        if (!(temp = InputValidator::validatePassword(ui->Pwd_text->toPlainText().trimmed())).isEmpty())
+            allValid = false;
+        if (ui->Pwd_text->toPlainText().trimmed() != ui->Confirm_Pwd_text->toPlainText().trimmed())
+            allValid = false;
+    } else {
+        allValid = false;
+    }
+
+
+    ui->SignUp_Btn->setEnabled(allFilled && allValid);
 }
 
 void Signup::OnSuccesfullSignUp()

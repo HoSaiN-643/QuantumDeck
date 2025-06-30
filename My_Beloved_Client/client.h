@@ -7,9 +7,9 @@
 
 class QTcpSocket;
 class Login;
-class Connect; // Forward declaration
-class Signup;  // Forward declaration
-class Choose_mode; // Forward declaration
+class Connect;
+class Signup;
+class Choose_mode;
 
 class Client : public QObject
 {
@@ -25,11 +25,12 @@ public:
     Player &GetPlayer();
     void WriteToServer(const QString &data);
 
-    // Add pointers to dependent classes
+
     void SetConnect(Connect *connect) { m_connect = connect; }
     void SetSignup(Signup *signup) { m_signup = signup; }
     void SetChooseMode(Choose_mode *chooseMode) { m_chooseMode = chooseMode; }
 
+    void handleUpdateProfile(const QStringList &fields);
 private slots:
     void onConnected();
     void onDisconnected();
@@ -48,9 +49,9 @@ private:
     Player player;
     Login* loginWindow;
     QByteArray readBuffer;
-    Connect *m_connect; // Pointer to Connect instance
-    Signup *m_signup;   // Pointer to Signup instance
-    Choose_mode *m_chooseMode; // Pointer to Choose_mode instance
+    Connect *m_connect;
+    Signup *m_signup;
+    Choose_mode *m_chooseMode;
 };
 
 #endif // CLIENT_H

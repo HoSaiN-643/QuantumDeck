@@ -33,7 +33,7 @@ private slots:
     void handleLogin(QTcpSocket *client, const QStringList &f);
     void handleSignup(QTcpSocket *client, const QStringList &f);
     void handleRecover(QTcpSocket *client, const QStringList &f);
-    void handleUpdateProfile(QTcpSocket *client, const QStringList &f);
+    void handleClientCommand(QTcpSocket *client, const QStringList &f);
     void handlePreGame(QTcpSocket *client, const QStringList &f);
     void handleUnknown(QTcpSocket *client);
 
