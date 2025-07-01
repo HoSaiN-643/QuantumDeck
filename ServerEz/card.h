@@ -10,11 +10,11 @@ class Card
 
 public:
     Card(QString,int);
-    QString Suit()
+    QString Suit() const
     {
         return suit;
     }
-    int Rank()
+    int Rank() const
     {
         return rank;
     }

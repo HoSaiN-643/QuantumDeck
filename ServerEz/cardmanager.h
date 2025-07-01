@@ -2,16 +2,18 @@
 #define CARDMANAGER_H
 
 #include <card.h>
+#include <QVector>
+#include <QString>
 
 class CardManager
 {
-
 public:
     CardManager();
     static void Shuffle(QVector<Card>& Cards);
     static QVector<Card> MakeDeck();
     static QVector<Card> Get7Card(QVector<Card>& Cards);
-
+    static int DetermineHandRank(const QVector<Card>& hand);
+    static int CompareHands(const QVector<Card>& hand1, const QVector<Card>& hand2);
 };
 
 #endif // CARDMANAGER_H
