@@ -2,6 +2,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QDebug>
+#include <QRegularExpression>
 
 MemberDatabaseManager::MemberDatabaseManager(const QString &dbPath, QObject *parent)
     : QObject(parent), m_dbPath(dbPath)
@@ -35,14 +36,14 @@ bool MemberDatabaseManager::createMemberTable()
 {
     QSqlQuery q(m_db);
     const QString sql = R"(
-      CREATE TABLE IF NOT EXISTS members (
-        firstname TEXT NOT NULL,
-        lastname  TEXT NOT NULL,
-        email     TEXT UNIQUE NOT NULL,
-        phone     TEXT,
-        username  TEXT UNIQUE NOT NULL,
-        password  TEXT NOT NULL
-      );
+        CREATE TABLE IF NOT EXISTS members (
+            firstname TEXT NOT NULL,
+            lastname TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            phone TEXT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        );
     )";
     if (!q.exec(sql)) {
         qWarning() << "MemberDB: create table failed:" << q.lastError().text();
@@ -50,103 +51,6 @@ bool MemberDatabaseManager::createMemberTable()
     }
     return true;
 }
-bool MemberDatabaseManager::updateMemberAllFields(QTcpSocket *socket, const QString &oldUsername, const QString &firstname, const QString &lastname, const QString &phone, const QString &email, const QString &newUsername, const QString &newPassword)
-{
-    // بررسی وجود نام کاربری قدیمی در دیتابیس
-    QVariantMap existingMember = GetMemberByUsername(oldUsername);
-    if (existingMember.isEmpty()) {
-        qDebug() << "Old username not found in database during update:" << oldUsername;
-        QString response = QString("S[CF][NOTFOUND][Old username not found in database.]");
-        socket->write(response.toUtf8() + "\n");
-        socket->flush();
-        return false;
-    }
-
-    // ذخیره اطلاعات قدیمی برای بازگرداندن در صورت نیاز
-    QVariantMap oldMemberData = existingMember;
-
-    // حذف ردیف قدیمی از دیتابیس
-    QSqlQuery deleteQuery(m_db);
-    deleteQuery.prepare("DELETE FROM members WHERE username = :username");
-    deleteQuery.bindValue(":username", oldUsername);
-    if (!deleteQuery.exec()) {
-        qDebug() << "Failed to delete old member data for username:" << oldUsername << "Error:" << deleteQuery.lastError().text();
-        QString response = QString("S[CF][ERROR][Failed to delete old member data.]");
-        socket->write(response.toUtf8() + "\n");
-        socket->flush();
-        return false;
-    }
-
-    // بررسی وجود نام کاربری جدید در دیتابیس (بعد از حذف ردیف قدیمی)
-    QVariantMap duplicateMember = GetMemberByUsername(newUsername);
-
-    if (!duplicateMember.isEmpty()) {
-        // اگر نام کاربری جدید وجود دارد، ردیف قدیمی را بازمی‌گردانیم
-        qDebug() << "New username already exists during update:" << newUsername;
-        QSqlQuery restoreQuery(m_db);
-        restoreQuery.prepare("INSERT INTO members (username, firstname, lastname, email, phone, password) "
-                             "VALUES (:username, :firstname, :lastname, :email, :phone, :password)");
-        restoreQuery.bindValue(":username", oldMemberData["username"].toString());
-        restoreQuery.bindValue(":firstname", oldMemberData["firstname"].toString());
-        restoreQuery.bindValue(":lastname", oldMemberData["lastname"].toString());
-        restoreQuery.bindValue(":email", oldMemberData["email"].toString());
-        restoreQuery.bindValue(":phone", oldMemberData["phone"].toString());
-        restoreQuery.bindValue(":password", oldMemberData["password"].toString());
-        if (!restoreQuery.exec()) {
-            qDebug() << "Failed to restore old member data for username:" << oldUsername << "Error:" << restoreQuery.lastError().text();
-            QString response = QString("S[CF][ERROR][Critical error: Failed to restore old data.]");
-            socket->write(response.toUtf8() + "\n");
-            socket->flush();
-            return false;
-        }
-        QString response = QString("S[CF][DUPLICATE][New username already exists.]");
-        socket->write(response.toUtf8() + "\n");
-        socket->flush();
-        return false;
-    }
-
-    // اگر نام کاربری جدید وجود ندارد، ردیف جدید با اطلاعات به‌روزرسانی‌شده ایجاد می‌شود
-    QSqlQuery insertQuery(m_db);
-    insertQuery.prepare("INSERT INTO members (username, firstname, lastname, email, phone, password) "
-                        "VALUES (:username, :firstname, :lastname, :email, :phone, :password)");
-    insertQuery.bindValue(":username", newUsername);
-    insertQuery.bindValue(":firstname", firstname);
-    insertQuery.bindValue(":lastname", lastname);
-    insertQuery.bindValue(":email", email);
-    insertQuery.bindValue(":phone", phone);
-    insertQuery.bindValue(":password", newPassword); // فرض می‌کنیم رمز عبور به صورت هش‌شده ذخیره می‌شود
-
-    if (!insertQuery.exec()) {
-        // در صورت عدم موفقیت در درج اطلاعات جدید، ردیف قدیمی را بازمی‌گردانیم
-        qDebug() << "Failed to insert updated member data for username:" << newUsername << "Error:" << insertQuery.lastError().text();
-        QSqlQuery restoreQuery(m_db);
-        restoreQuery.prepare("INSERT INTO members (username, firstname, lastname, email, phone, password) "
-                             "VALUES (:username, :firstname, :lastname, :email, :phone, :password)");
-        restoreQuery.bindValue(":username", oldMemberData["username"].toString());
-        restoreQuery.bindValue(":firstname", oldMemberData["firstname"].toString());
-        restoreQuery.bindValue(":lastname", oldMemberData["lastname"].toString());
-        restoreQuery.bindValue(":email", oldMemberData["email"].toString());
-        restoreQuery.bindValue(":phone", oldMemberData["phone"].toString());
-        restoreQuery.bindValue(":password", oldMemberData["password"].toString());
-        if (!restoreQuery.exec()) {
-            qDebug() << "Failed to restore old member data for username:" << oldUsername << "Error:" << restoreQuery.lastError().text();
-            QString response = QString("S[CF][ERROR][Critical error: Failed to restore old data after failed update.]");
-            socket->write(response.toUtf8() + "\n");
-            socket->flush();
-            return false;
-        }
-        QString response = QString("S[CF][ERROR][Failed to insert updated member data.]");
-        socket->write(response.toUtf8() + "\n");
-        socket->flush();
-        return false;
-    }
-
-    // اگر همه چیز با موفقیت انجام شد
-    qDebug() << "Member data updated successfully from username:" << oldUsername << "to new username:" << newUsername;
-
-    return true;
-}
-
 
 bool MemberDatabaseManager::addMember(QTcpSocket *client,
                                       const QString &firstname,
@@ -163,6 +67,17 @@ bool MemberDatabaseManager::addMember(QTcpSocket *client,
     if (!m_db.isOpen()) {
         qWarning() << "MemberDB: addMember called but DB is not open!";
         client->write("S[ERROR][Database not open]\n");
+        client->flush();
+        return false;
+    }
+
+    // بررسی ساده فرمت ایمیل
+
+
+    // بررسی خالی نبودن فیلدها
+    if (firstname.isEmpty() || lastname.isEmpty() || username.isEmpty() || password.isEmpty()) {
+        client->write("S[ERROR][Required fields cannot be empty]\n");
+        client->flush();
         return false;
     }
 
@@ -176,20 +91,22 @@ bool MemberDatabaseManager::addMember(QTcpSocket *client,
         qWarning() << "MemberDB: duplicate check failed:" << chk.lastError().text();
         m_db.rollback();
         client->write("S[ERROR][Database query error]\n");
+        client->flush();
         return false;
     }
     if (chk.value(0).toInt() > 0) {
         m_db.rollback();
         client->write("S[ERROR][Username or email already exists]\n");
+        client->flush();
         return false;
     }
 
     QSqlQuery ins(m_db);
     const QString sql = R"(
-      INSERT INTO members
-        (firstname, lastname, email, phone, username, password)
-      VALUES
-        (:f, :l, :e, :ph, :u, :p)
+        INSERT INTO members
+            (firstname, lastname, email, phone, username, password)
+        VALUES
+            (:f, :l, :e, :ph, :u, :p)
     )";
     ins.prepare(sql);
     ins.bindValue(":f", firstname);
@@ -197,34 +114,95 @@ bool MemberDatabaseManager::addMember(QTcpSocket *client,
     ins.bindValue(":e", email);
     ins.bindValue(":ph", phone);
     ins.bindValue(":u", username);
-    ins.bindValue(":p", password);
+    ins.bindValue(":p", password); // هشدار: رمز عبور باید هش شود (برای آینده)
 
     if (!ins.exec()) {
         qWarning() << "MemberDB: insert failed: " << ins.lastError().text();
         m_db.rollback();
         client->write("S[ERROR][Database insert failed]\n");
+        client->flush();
         return false;
     }
 
     m_db.commit();
     client->write("S[OK][Signup successful]\n");
+    client->flush();
     qDebug() << "MemberDB: Member added:" << username;
     return true;
 }
 
+bool MemberDatabaseManager::updateMemberAllFields(QTcpSocket *socket, const QString &oldUsername,
+                                                  const QString &firstname, const QString &lastname,
+                                                  const QString &phone, const QString &email,
+                                                  const QString &newUsername, const QString &newPassword)
+{
+    if (!socket) {
+        qWarning() << "MemberDB: Null socket in updateMemberAllFields";
+        return false;
+    }
+
+    // بررسی وجود نام کاربری قدیمی
+    QVariantMap existingMember = GetMemberByUsername(oldUsername);
+    if (existingMember.isEmpty()) {
+        qDebug() << "Old username not found in database during update:" << oldUsername;
+        socket->write("C[CF][NOTFOUND][Old username not found in database.]\n");
+        socket->flush();
+        return false;
+    }
+
+    // بررسی فرمت ایمیل
 
 
+    // بررسی خالی نبودن فیلدها
+    if (firstname.isEmpty() || lastname.isEmpty() || newUsername.isEmpty() || newPassword.isEmpty()) {
+        socket->write("C[CF][ERROR][Required fields cannot be empty]\n");
+        socket->flush();
+        return false;
+    }
+
+    // بررسی وجود نام کاربری جدید
+    if (newUsername != oldUsername) {
+        QVariantMap duplicateMember = GetMemberByUsername(newUsername);
+        if (!duplicateMember.isEmpty()) {
+            qDebug() << "New username already exists during update:" << newUsername;
+            socket->write("C[CF][DUPLICATE][New username already exists.]\n");
+            socket->flush();
+            return false;
+        }
+    }
+
+    // به‌روزرسانی اطلاعات
+    QSqlQuery updateQuery(m_db);
+    updateQuery.prepare("UPDATE members SET firstname = :firstname, lastname = :lastname, email = :email, phone = :phone, username = :username, password = :password WHERE username = :oldUsername");
+    updateQuery.bindValue(":firstname", firstname);
+    updateQuery.bindValue(":lastname", lastname);
+    updateQuery.bindValue(":email", email);
+    updateQuery.bindValue(":phone", phone);
+    updateQuery.bindValue(":username", newUsername);
+    updateQuery.bindValue(":password", newPassword);
+    updateQuery.bindValue(":oldUsername", oldUsername);
+
+    if (!updateQuery.exec()) {
+        qDebug() << "Failed to update member data for username:" << oldUsername << "Error:" << updateQuery.lastError().text();
+        socket->write(QString("C[CF][ERROR][Failed to update member data: %1]\n").arg(updateQuery.lastError().text()).toUtf8());
+        socket->flush();
+        return false;
+    }
+
+    qDebug() << "Member data updated successfully from username:" << oldUsername << "to new username:" << newUsername;
+    socket->write(QString("C[CF][OK][Information updated successfully][%1][%2][%3][%4][%5][%6]\n")
+                      .arg(firstname, lastname, phone, email, newUsername, newPassword).toUtf8());
+    socket->flush();
+    return true;
+}
 
 QVariantMap MemberDatabaseManager::fetchMemberBy(const QString &column, const QVariant &value)
 {
     QVariantMap m;
-    if (!m_db.isOpen())
-        return m;
+    if (!m_db.isOpen()) return m;
 
     QString stmt = QString(R"(
-        SELECT firstname, lastname,
-               email, phone,
-               username, password
+        SELECT firstname, lastname, email, phone, username, password
         FROM members
         WHERE %1 = :val;
     )").arg(column);
@@ -261,15 +239,12 @@ QVariantMap MemberDatabaseManager::GetMemberByPhone(const QString &phone)
 QList<QVariantMap> MemberDatabaseManager::getAllMembers()
 {
     QList<QVariantMap> list;
-    if (!m_db.isOpen())
-        return list;
+    if (!m_db.isOpen()) return list;
 
     QSqlQuery q(m_db);
     const QString stmt = R"(
-      SELECT firstname, lastname,
-             email, phone,
-             username, password
-      FROM members;
+        SELECT firstname, lastname, email, phone, username, password
+        FROM members;
     )";
     if (q.exec(stmt)) {
         while (q.next()) {

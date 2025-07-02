@@ -12,6 +12,7 @@ SOURCES += \
     PreGame.cpp \
     card.cpp \
     cardmanager.cpp \
+    game.cpp \
     main.cpp \
     manager.cpp \
     memberdatabasemanager.cpp \
@@ -22,6 +23,7 @@ HEADERS += \
     PreGame.h \
     card.h \
     cardmanager.h \
+    game.h \
     manager.h \
     memberdatabasemanager.h \
     server.h \

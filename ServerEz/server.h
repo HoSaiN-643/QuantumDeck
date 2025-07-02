@@ -21,15 +21,12 @@ class SERVER : public QObject
     PreGame*                    lobby;
 
 public:
-    explicit SERVER(MemberDatabaseManager& db,
-                    const QString& address,
-                    int port = 8888,
-                    QObject* parent = nullptr);
+    explicit SERVER(MemberDatabaseManager& db, const QString& address, int port = 8888, QObject* parent = nullptr);
+    ~SERVER();
 
-private slots:
+private:
     QStringList extractFields(const QString &s) const;
 
-    // Command handlers
     void handleLogin(QTcpSocket *client, const QStringList &f);
     void handleSignup(QTcpSocket *client, const QStringList &f);
     void handleRecover(QTcpSocket *client, const QStringList &f);
@@ -37,9 +34,12 @@ private slots:
     void handlePreGame(QTcpSocket *client, const QStringList &f);
     void handleUnknown(QTcpSocket *client);
 
+private slots:
     void OnNewConnection();
     void OnReadyRead();
     void OnClientDisconnection(QTcpSocket* client);
+    void onGameStarted(const QStringList& players); // اسلات جدید برای شروع بازی
+    void onGameFinished();
 };
 
 #endif // SERVER_H

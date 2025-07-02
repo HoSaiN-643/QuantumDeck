@@ -12,6 +12,7 @@ SOURCES += \
     change_profile.cpp \
     choose_mode.cpp \
     client.cpp \
+    close.cpp \
     history.cpp \
     log.cpp \
     login.cpp \
@@ -29,6 +30,7 @@ HEADERS += \
     change_profile.h \
     choose_mode.h \
     client.h \
+    close.h \
     connect.h \
     history.h \
     log.h \
@@ -44,6 +46,7 @@ HEADERS += \
 FORMS += \
     change_profile.ui \
     choose_mode.ui \
+    close.ui \
     connect.ui \
     history.ui \
     log.ui \

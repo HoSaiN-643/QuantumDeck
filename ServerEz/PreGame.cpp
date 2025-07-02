@@ -1,15 +1,21 @@
 #include "pregame.h"
 #include <QString>
+#include <QDebug>
 
-PreGame::PreGame(int count,
-                 QPair<QTcpSocket*, QString> p,
-                 QObject *parent)
-    : QObject(parent),
-    PlayerCnt(count),
-    WaitingPlayers(1)
+PreGame::PreGame(int count, QPair<QTcpSocket*, QString> p, QObject *parent)
+    : QObject(parent), PlayerCnt(count), WaitingPlayers(1)
 {
     Players.append(p);
     sendSearching();
+}
+
+PreGame::~PreGame()
+{
+    for (auto &player : Players) {
+        if (player.first) {
+            player.first->disconnect(); // قطع اتصال سوکت‌ها
+        }
+    }
 }
 
 void PreGame::AddPlayer(QPair<QTcpSocket*, QString> p)
@@ -25,6 +31,11 @@ void PreGame::AddPlayer(QPair<QTcpSocket*, QString> p)
     } else {
         IsServerFull = true;
         sendFound();
+        QStringList playerIds;
+        for (const auto& player : Players) {
+            playerIds << player.second;
+        }
+        emit startGame(playerIds);
     }
 }
 
@@ -35,8 +46,9 @@ void PreGame::sendSearching()
         .arg(WaitingPlayers);
     QByteArray raw = msg.toUtf8();
     for (auto &pr : Players) {
-        if (pr.first) {
+        if (pr.first && pr.first->isOpen()) {
             pr.first->write(raw);
+            pr.first->flush();
         }
     }
 }
@@ -44,10 +56,10 @@ void PreGame::sendSearching()
 void PreGame::sendFound()
 {
     for (auto &me : Players) {
-        if (!me.first) continue;
+        if (!me.first || !me.first->isOpen()) continue;
         QStringList others;
         for (auto &peer : Players) {
-            if (peer.first && peer.first != me.first) {
+            if (peer.first && peer.first != me.first && peer.first->isOpen()) {
                 others << peer.second;
             }
         }
@@ -57,5 +69,6 @@ void PreGame::sendFound()
         }
         msg += "\n";
         me.first->write(msg.toUtf8());
+        me.first->flush();
     }
 }

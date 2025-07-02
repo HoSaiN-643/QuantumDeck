@@ -14,11 +14,13 @@ class PreGame : public QObject
 public:
     bool IsServerFull{false};
 
-    explicit PreGame(int count,
-                     QPair<QTcpSocket*, QString> p,
-                     QObject *parent = nullptr);
+    explicit PreGame(int count, QPair<QTcpSocket*, QString> p, QObject *parent = nullptr);
+    ~PreGame(); // دتور اضافه شد
 
     void AddPlayer(QPair<QTcpSocket*, QString> p);
+
+signals:
+    void startGame(const QStringList& players);
 
 private:
     int PlayerCnt{0};

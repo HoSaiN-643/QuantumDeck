@@ -2,6 +2,7 @@
 #define START_H
 
 #include <QObject>
+#include <QTimer>
 
 // فقط اعلام وجود کلاس‌ها
 class Client;
@@ -14,9 +15,13 @@ class Start : public QObject
     Client *c;
     Connect *window;
 
+
 public:
     explicit Start(QObject *parent = nullptr);
     ~Start();
+
+private slots:
+
 };
 
 #endif // START_H

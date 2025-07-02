@@ -111,6 +111,7 @@ void Change_profile::onSaveButtonClicked()
     if (password_change_attempted) {
         // کاربر قصد تغییر رمز عبور دارد
         if (current_password != player.password()) {
+            qDebug() << player.password();
             errors << "Current password is incorrect.";
         }
         if (new_password != confirm_new_password) {
@@ -140,10 +141,8 @@ void Change_profile::onSaveButtonClicked()
     // ساخت پیام برای سرور با ۸ فیلد
     QString message = QString("C[CF][%1][%2][%3][%4][%5][%6][%7]")
                           .arg(firstname, lastname, email, phone, username, password_to_send, original_values.username);
-
+    qDebug() <<"message from change profile : " << message;
+    qDebug() << "player info from change profile: " << player.firstName() << player.lastName() << player.email() << player.phone() << player.username() << player.password();
     // ارسال پیام به سرور
     client->WriteToServer(message);
 }
-
-
-
