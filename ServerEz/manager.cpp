@@ -1,38 +1,39 @@
 #include "manager.h"
-#include <server.h>
-#include <memberdatabasemanager.h>
-#include <QTcpServer>
-#include <QCoreApplication>
 #include <QNetworkInterface>
 #include <QDebug>
 
-MANAGER::MANAGER() {
+MANAGER::MANAGER(QObject *parent) : QObject(parent)
+{
     QString baseDir = "C:/Users/HoSaiN/Desktop/HoSaiN_Apps_Edits/HoSaiN_Qt/Card game/ServerEz";
     QString dbPath = baseDir + "/members.sqlite";
 
-    // Initialize the database
-    db = new MemberDatabaseManager(dbPath);
-
-    // Get the system's IP address dynamically
+    db = new MemberDatabaseManager(dbPath, this);
     QString address = getLocalIPAddress();
-    qDebug() << "Using IP address:" << address;
+    server = new SERVER(db, address, this);
+    server->setPort(8888);
 
-    // Initialize the server with the dynamic IP address
-    server = new SERVER(*db, address);
+    if (!server->listen(QHostAddress(address), 8888)) {
+        qDebug() << "Server could not start on" << address << ":" << 8888
+                 << "— error:" << server->errorString();
+    } else {
+        qDebug() << "Server started on" << address << ":" << 8888;
+    }
 }
 
-QString MANAGER::getLocalIPAddress() {
-    // Get all network interfaces
-    QList<QHostAddress> addresses = QNetworkInterface::allAddresses();
+MANAGER::~MANAGER()
+{
+    delete server;
+    delete db;
+}
 
-    // Look for a non-loopback IPv4 address
+QString MANAGER::getLocalIPAddress()
+{
+    QList<QHostAddress> addresses = QNetworkInterface::allAddresses();
     for (const QHostAddress &addr : addresses) {
         if (addr.protocol() == QAbstractSocket::IPv4Protocol && !addr.isLoopback()) {
             return addr.toString();
         }
     }
-
-    // Fallback: If no suitable IP is found, use QHostAddress::Any (0.0.0.0)
     qWarning() << "No valid IPv4 address found, falling back to QHostAddress::Any";
     return QHostAddress(QHostAddress::Any).toString();
 }

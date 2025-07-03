@@ -1,15 +1,15 @@
 #include "cardmanager.h"
-#include <algorithm> // برای std::shuffle
-#include <random> // برای std::mt19937
-#include <stdexcept> // برای std::invalid_argument
+#include <algorithm>
+#include <random>
+#include <stdexcept>
 #include <QMap>
 #include <QSet>
+#include <QDebug>
 
 CardManager::CardManager() {}
 
 void CardManager::Shuffle(QVector<Card>& Cards)
 {
-    // استفاده از روش مدرن برای مخلوط کردن
     std::random_device rd;
     std::mt19937 g(rd());
     std::shuffle(Cards.begin(), Cards.end(), g);
@@ -18,19 +18,20 @@ void CardManager::Shuffle(QVector<Card>& Cards)
 QVector<Card> CardManager::MakeDeck()
 {
     QVector<Card> Cards;
-    QStringList suits = {"Dimond", "Gold", "Dollar", "Coin"}; // اصلاح نام Dimond
-
+    QStringList suits = {"Dimond", "Gold", "Dollar", "Coin"};
     for (const auto& suit : suits) {
         for (int rank = 1; rank <= 13; ++rank) {
             Cards.push_back(Card(suit, rank));
         }
     }
+    qDebug() << "MakeDeck created" << Cards.size() << "cards";
     return Cards;
 }
 
 QVector<Card> CardManager::Get7Card(QVector<Card>& Cards)
 {
     if (Cards.size() < 7) {
+        qDebug() << "Error: Not enough cards to select 7, deck size:" << Cards.size();
         throw QString("Not enough cards to play");
     }
 
@@ -51,16 +52,15 @@ QVector<Card> CardManager::Get7Card(QVector<Card>& Cards)
 int CardManager::DetermineHandRank(const QVector<Card>& hand)
 {
     if (hand.size() != 5) {
+        qDebug() << "Error: Hand must contain exactly 5 cards, got" << hand.size();
         throw std::invalid_argument("Hand must contain exactly 5 cards");
     }
 
-    // مرتب‌سازی دست به ترتیب نزولی
     QVector<Card> sortedHand = hand;
     std::sort(sortedHand.begin(), sortedHand.end(), [](const Card& a, const Card& b) {
         return a.Rank() > b.Rank();
     });
 
-    // شمارش رتبه‌ها و خال‌ها
     QMap<int, int> rankCount;
     QMap<QString, int> suitCount;
     for (const auto& card : sortedHand) {
@@ -77,7 +77,6 @@ int CardManager::DetermineHandRank(const QVector<Card>& hand)
         }
     }
 
-    // بررسی Ace-low straight (10, 9, 8, 7, 6)
     bool isAceLowStraight = false;
     if (sortedHand[0].Rank() == 1 && sortedHand[1].Rank() == 10 &&
         sortedHand[2].Rank() == 9 && sortedHand[3].Rank() == 8 &&
@@ -85,25 +84,21 @@ int CardManager::DetermineHandRank(const QVector<Card>& hand)
         isAceLowStraight = true;
     }
 
-    // بررسی Golden Hand (A, K, Q, J, 10)
     if (isSameSuit && sortedHand[0].Rank() == 1 && sortedHand[1].Rank() == 13 &&
         sortedHand[2].Rank() == 12 && sortedHand[3].Rank() == 11 && sortedHand[4].Rank() == 10) {
         return 10; // Golden Hand
     }
 
-    // بررسی Straight Flush
     if (isSameSuit && (isConsecutive || isAceLowStraight)) {
         return 9; // Order Hand
     }
 
-    // بررسی Four of a Kind
     for (const auto& count : rankCount) {
         if (count == 4) {
             return 8; // Four to One
         }
     }
 
-    // بررسی Full House
     bool hasThree = false, hasPair = false;
     for (const auto& count : rankCount) {
         if (count == 3) hasThree = true;
@@ -113,22 +108,18 @@ int CardManager::DetermineHandRank(const QVector<Card>& hand)
         return 7; // Penthouse
     }
 
-    // بررسی Flush
     if (isSameSuit) {
         return 6; // MSC Hand
     }
 
-    // بررسی Straight
     if (isConsecutive || isAceLowStraight) {
         return 5; // Series
     }
 
-    // بررسی Three of a Kind
     if (hasThree) {
         return 4; // Three to Two
     }
 
-    // بررسی Two Pair
     int pairCount = 0;
     for (const auto& count : rankCount) {
         if (count == 2) pairCount++;
@@ -137,7 +128,6 @@ int CardManager::DetermineHandRank(const QVector<Card>& hand)
         return 3; // Double Pair
     }
 
-    // بررسی One Pair
     if (pairCount == 1) {
         return 2; // Single Pair
     }
@@ -151,10 +141,10 @@ int CardManager::CompareHands(const QVector<Card>& hand1, const QVector<Card>& h
     int rank2 = DetermineHandRank(hand2);
 
     if (rank1 != rank2) {
+        qDebug() << "Comparing hands: rank1 =" << rank1 << ", rank2 =" << rank2;
         return rank1 > rank2 ? 1 : -1;
     }
 
-    // مرتب‌سازی دست‌ها
     QVector<Card> sortedHand1 = hand1;
     QVector<Card> sortedHand2 = hand2;
     std::sort(sortedHand1.begin(), sortedHand1.end(), [](const Card& a, const Card& b) {
@@ -164,10 +154,8 @@ int CardManager::CompareHands(const QVector<Card>& hand1, const QVector<Card>& h
         return a.Rank() > b.Rank();
     });
 
-    // رتبه‌بندی خال‌ها
-    QMap<QString, int> suitRank = {{"Diamond", 4}, {"Gold", 3}, {"Dollar", 2}, {"Coin", 1}};
+    QMap<QString, int> suitRank = {{"Dimond", 4}, {"Gold", 3}, {"Dollar", 2}, {"Coin", 1}};
 
-    // مقایسه بر اساس نوع دست
     switch (rank1) {
     case 10: // Golden Hand
     case 9: // Straight Flush
@@ -252,5 +240,5 @@ int CardManager::CompareHands(const QVector<Card>& hand1, const QVector<Card>& h
         return suitRank[sortedHand1[0].Suit()] > suitRank[sortedHand2[0].Suit()] ? 1 : -1;
     }
     }
-    return 0; // تساوی
+    return 0;
 }

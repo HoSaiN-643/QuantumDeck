@@ -1,12 +1,11 @@
-#ifndef MAINMENU_H
-#define MAINMENU_H
-
+#pragma once
 #include <QMainWindow>
+#include "player.h"
+#include "client.h"
+
 class History;
 class Change_profile;
 class Choose_mode;
-class Client;
-class Player;
 
 namespace Ui {
 class MainMenu;
@@ -19,6 +18,7 @@ class MainMenu : public QMainWindow
 public:
     explicit MainMenu(Player& player, Client* client, QWidget *parent = nullptr);
     ~MainMenu();
+    void displayGameHistory(const QStringList &history);
 
 private slots:
     void Choose_Mode_Btn_clicked();
@@ -33,5 +33,3 @@ private:
     Change_profile* Change_profile_Window;
     Choose_mode* Choose_mode_Window;
 };
-
-#endif // MAINMENU_H

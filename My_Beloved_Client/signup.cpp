@@ -4,18 +4,17 @@
 #include "InputValidator.h"
 #include <QMessageBox>
 #include <QVector>
-#include "login.h"
+#include "log.h"
 #include <QDebug>
 
 Signup::Signup(Player& player, Client *client, QWidget *parent)
     : QMainWindow(parent),
     ui(new Ui::Signup),
     client(client),
-    loginWindow(new Login(player, client))
+    player(player)
 {
     ui->setupUi(this);
     ui->SignUp_Btn->setEnabled(false);
-
 
     QVector<QTextEdit*> edits = {
         ui->First_Name_Text, ui->Last_Name_Text, ui->Phone_Text,
@@ -24,7 +23,7 @@ Signup::Signup(Player& player, Client *client, QWidget *parent)
     for (QTextEdit* edit : edits)
         connect(edit, &QTextEdit::textChanged, this, &Signup::validateFields);
 
-    connect(ui->SignUp_Btn, &QPushButton::clicked, this, &Signup::SignUp_Btn_clicked);
+    connect(ui->SignUp_Btn, &QPushButton::clicked, this, &Signup::SignUp_Btn_Clicked);
     client->SetSignup(this);
 }
 
@@ -33,53 +32,44 @@ Signup::~Signup()
     delete ui;
 }
 
-void Signup::SignUp_Btn_clicked()
+void Signup::SignUp_Btn_Clicked()
 {
-
     QString firstName = ui->First_Name_Text->toPlainText().trimmed();
     QString lastName = ui->Last_Name_Text->toPlainText().trimmed();
-    QString email = ui->Email_Text->toPlainText().trimmed();
     QString phone = ui->Phone_Text->toPlainText().trimmed();
+    QString email = ui->Email_Text->toPlainText().trimmed();
     QString username = ui->Uname_Text->toPlainText().trimmed();
     QString password = ui->Pwd_text->toPlainText().trimmed();
     QString confirmPassword = ui->Confirm_Pwd_text->toPlainText().trimmed();
 
-
     QStringList errors;
-
-    QString errorMsg;
-    if (!(errorMsg = InputValidator::validateName(firstName, "firstname")).isEmpty())
-        errors << errorMsg;
-    if (!(errorMsg = InputValidator::validateName(lastName, "lastname")).isEmpty())
-        errors << errorMsg;
-    if (!(errorMsg = InputValidator::validateEmail(email)).isEmpty())
-        errors << errorMsg;
-    if (!(errorMsg = InputValidator::validatePhone(phone)).isEmpty())
-        errors << errorMsg;
-    if (!(errorMsg = InputValidator::validateUsername(username)).isEmpty())
-        errors << errorMsg;
-    if (!(errorMsg = InputValidator::validatePassword(password)).isEmpty())
-        errors << errorMsg;
+    if (QString err = InputValidator::validateName(firstName, "First Name"); !err.isEmpty())
+        errors << err;
+    if (QString err = InputValidator::validateName(lastName, "Last Name"); !err.isEmpty())
+        errors << err;
+    if (QString err = InputValidator::validatePhone(phone); !err.isEmpty())
+        errors << err;
+    if (QString err = InputValidator::validateEmail(email); !err.isEmpty())
+        errors << err;
+    if (QString err = InputValidator::validateUsername(username); !err.isEmpty())
+        errors << err;
+    if (QString err = InputValidator::validatePassword(password); !err.isEmpty())
+        errors << err;
     if (password != confirmPassword)
-        errors << "confirm password and password are not same";
+        errors << "Passwords do not match";
 
     if (!errors.isEmpty()) {
-        QString errorText = "please fix the following errors:\n\n";
-        errorText += errors.join("\n");
-        QMessageBox::warning(this, "Invalid input", errorText);
+        QMessageBox::warning(this, "Invalid Input", errors.join("\n"));
         return;
     }
 
-
-    QString data = QString("S[%1][%2][%3][%4][%5][%6]")
-                       .arg(firstName, lastName, email, phone, username, password);
+    QString data = QString("S[%1][%2][%3][%4][%5][%6]\n")
+                       .arg(firstName, lastName, phone, email, username, password);
     client->WriteToServer(data);
-
 }
 
 void Signup::validateFields()
 {
-
     bool allFilled =
         !ui->First_Name_Text->toPlainText().trimmed().isEmpty() &&
         !ui->Last_Name_Text->toPlainText().trimmed().isEmpty() &&
@@ -89,21 +79,19 @@ void Signup::validateFields()
         !ui->Pwd_text->toPlainText().trimmed().isEmpty() &&
         !ui->Confirm_Pwd_text->toPlainText().trimmed().isEmpty();
 
-
     bool allValid = true;
-    QString temp;
     if (allFilled) {
-        if (!(temp = InputValidator::validateName(ui->First_Name_Text->toPlainText().trimmed(), "نام")).isEmpty())
+        if (!InputValidator::validateName(ui->First_Name_Text->toPlainText().trimmed(), "First Name").isEmpty())
             allValid = false;
-        if (!(temp = InputValidator::validateName(ui->Last_Name_Text->toPlainText().trimmed(), "نام خانوادگی")).isEmpty())
+        if (!InputValidator::validateName(ui->Last_Name_Text->toPlainText().trimmed(), "Last Name").isEmpty())
             allValid = false;
-        if (!(temp = InputValidator::validateEmail(ui->Email_Text->toPlainText().trimmed())).isEmpty())
+        if (!InputValidator::validatePhone(ui->Phone_Text->toPlainText().trimmed()).isEmpty())
             allValid = false;
-        if (!(temp = InputValidator::validatePhone(ui->Phone_Text->toPlainText().trimmed())).isEmpty())
+        if (!InputValidator::validateEmail(ui->Email_Text->toPlainText().trimmed()).isEmpty())
             allValid = false;
-        if (!(temp = InputValidator::validateUsername(ui->Uname_Text->toPlainText().trimmed())).isEmpty())
+        if (!InputValidator::validateUsername(ui->Uname_Text->toPlainText().trimmed()).isEmpty())
             allValid = false;
-        if (!(temp = InputValidator::validatePassword(ui->Pwd_text->toPlainText().trimmed())).isEmpty())
+        if (!InputValidator::validatePassword(ui->Pwd_text->toPlainText().trimmed()).isEmpty())
             allValid = false;
         if (ui->Pwd_text->toPlainText().trimmed() != ui->Confirm_Pwd_text->toPlainText().trimmed())
             allValid = false;
@@ -111,12 +99,12 @@ void Signup::validateFields()
         allValid = false;
     }
 
-
     ui->SignUp_Btn->setEnabled(allFilled && allValid);
 }
 
 void Signup::OnSuccesfullSignUp()
 {
-    this->close();
-    loginWindow->show();
+    this->hide();
+    Log* logWindow = new Log(player, client);
+    logWindow->show();
 }

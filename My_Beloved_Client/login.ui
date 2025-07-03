@@ -15,39 +15,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="1">
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Orientation::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Policy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>100</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="0" column="0">
-     <spacer name="horizontalSpacer">
-      <property name="orientation">
-       <enum>Qt::Orientation::Horizontal</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Policy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>200</width>
-        <height>20</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="0" column="2">
+    <item row="1" column="2">
      <spacer name="horizontalSpacer_2">
       <property name="orientation">
        <enum>Qt::Orientation::Horizontal</enum>
@@ -63,16 +31,67 @@
       </property>
      </spacer>
     </item>
+    <item row="1" column="0">
+     <spacer name="horizontalSpacer">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Policy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>200</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="2" column="1">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Orientation::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Policy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>100</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
     <item row="0" column="1">
+     <spacer name="verticalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Orientation::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Policy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="1" column="1">
      <widget class="QGroupBox" name="mew">
       <property name="title">
-       <string>GroupBox</string>
+       <string>Login</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
       </property>
       <widget class="QLabel" name="UE_Label_2">
        <property name="geometry">
         <rect>
          <x>20</x>
-         <y>170</y>
+         <y>130</y>
          <width>80</width>
          <height>16</height>
         </rect>
@@ -85,7 +104,7 @@
        <property name="geometry">
         <rect>
          <x>20</x>
-         <y>240</y>
+         <y>200</y>
          <width>80</width>
          <height>16</height>
         </rect>
@@ -98,17 +117,7 @@
        <property name="geometry">
         <rect>
          <x>140</x>
-         <y>160</y>
-         <width>220</width>
-         <height>30</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QTextEdit" name="Pwd_text">
-       <property name="geometry">
-        <rect>
-         <x>140</x>
-         <y>230</y>
+         <y>120</y>
          <width>220</width>
          <height>30</height>
         </rect>
@@ -118,7 +127,7 @@
        <property name="geometry">
         <rect>
          <x>40</x>
-         <y>110</y>
+         <y>60</y>
          <width>120</width>
          <height>20</height>
         </rect>
@@ -130,8 +139,8 @@
       <widget class="QRadioButton" name="Log_Uname_Radio">
        <property name="geometry">
         <rect>
-         <x>210</x>
-         <y>110</y>
+         <x>190</x>
+         <y>60</y>
          <width>140</width>
          <height>20</height>
         </rect>
@@ -144,7 +153,7 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>300</y>
+         <y>250</y>
          <width>350</width>
          <height>60</height>
         </rect>
@@ -157,13 +166,23 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>360</y>
+         <y>310</y>
          <width>350</width>
          <height>60</height>
         </rect>
        </property>
        <property name="text">
         <string>I forgot my password</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="Pwd_text">
+       <property name="geometry">
+        <rect>
+         <x>140</x>
+         <y>190</y>
+         <width>220</width>
+         <height>30</height>
+        </rect>
        </property>
       </widget>
      </widget>

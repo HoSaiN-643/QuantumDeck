@@ -1,0 +1,62 @@
+<RCC>
+    <qresource prefix="/cards">
+        <file>Coin-2.JPG</file>
+        <file>Coin-3.JPG</file>
+        <file>Coin-4.JPG</file>
+        <file>Coin-5.JPG</file>
+        <file>Coin-6.JPG</file>
+        <file>Coin-7.JPG</file>
+        <file>Coin-8.JPG</file>
+        <file>Coin-9.JPG</file>
+        <file>Coin-10.JPG</file>
+        <file>Coin-Bitcoin.JPG</file>
+        <file>Coin-King.JPG</file>
+        <file>Coin-Queen.JPG</file>
+        <file>Coin-Soldier.JPG</file>
+        <file>Dimond-2.JPG</file>
+        <file>Dimond-3.JPG</file>
+        <file>Dimond-4.JPG</file>
+        <file>Dimond-5.JPG</file>
+        <file>Dimond-6.JPG</file>
+        <file>Dimond-7.JPG</file>
+        <file>Dimond-8.JPG</file>
+        <file>Dimond-9.JPG</file>
+        <file>Dimond-10.JPG</file>
+        <file>Dimond-Bitcoin.JPG</file>
+        <file>Dimond-King.JPG</file>
+        <file>Dimond-Queen.JPG</file>
+        <file>Dimond-Soldier.JPG</file>
+        <file>Dollar-2.JPG</file>
+        <file>Dollar-3.JPG</file>
+        <file>Dollar-4.JPG</file>
+        <file>Dollar-5.JPG</file>
+        <file>Dollar-6.JPG</file>
+        <file>Dollar-7.JPG</file>
+        <file>Dollar-8.JPG</file>
+        <file>Dollar-9.JPG</file>
+        <file>Dollar-10.JPG</file>
+        <file>Dollar-Bitcoin.JPG</file>
+        <file>Dollar-King.JPG</file>
+        <file>Dollar-Queen.JPG</file>
+        <file>Dollar-Soldier.JPG</file>
+        <file>Gold-2.JPG</file>
+        <file>Gold-3.JPG</file>
+        <file>Gold-4.JPG</file>
+        <file>Gold-5.JPG</file>
+        <file>Gold-6.JPG</file>
+        <file>Gold-7.JPG</file>
+        <file>Gold-8.JPG</file>
+        <file>Gold-9.JPG</file>
+        <file>Gold-10.JPG</file>
+        <file>Gold-Bitcoin.JPG</file>
+        <file>Gold-King.JPG</file>
+        <file>Gold-Queen.JPG</file>
+        <file>Gold-Soldier.JPG</file>
+    </qresource>
+    <qresource prefix="/fonts">
+        <file>BebasNeue-Regular.ttf</file>
+    </qresource>
+    <qresource prefix="/backgrounds">
+        <file>game_background.jpg</file>
+    </qresource>
+</RCC>

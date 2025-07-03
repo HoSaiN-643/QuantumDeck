@@ -12,20 +12,19 @@ class PreGame : public QObject
     Q_OBJECT
 
 public:
-    bool IsServerFull{false};
+    explicit PreGame(int playerCount, QPair<QTcpSocket*, QString> player, QObject *parent = nullptr);
+    ~PreGame();
 
-    explicit PreGame(int count, QPair<QTcpSocket*, QString> p, QObject *parent = nullptr);
-    ~PreGame(); // دتور اضافه شد
-
-    void AddPlayer(QPair<QTcpSocket*, QString> p);
+    void addPlayer(QPair<QTcpSocket*, QString> player);
+    bool isFull() const { return waitingPlayers >= playerCount; }
 
 signals:
     void startGame(const QStringList& players);
 
 private:
-    int PlayerCnt{0};
-    int WaitingPlayers{0};
-    QVector<QPair<QTcpSocket*, QString>> Players;
+    int playerCount;
+    int waitingPlayers;
+    QVector<QPair<QTcpSocket*, QString>> players;
 
     void sendSearching();
     void sendFound();

@@ -14,25 +14,9 @@ public:
     QString Suit() const { return suit; }
     int Rank() const { return rank; }
 
-    static Card fromString(const QString& cardStr) {
-        QStringList parts = cardStr.split(" of ");
-        if (parts.size() != 2) return Card();
-        QString rankStr = parts[0];
-        QString suit = parts[1];
-        int rank = RankNameToInt(rankStr);
-        return Card(suit, rank);
-    }
-
+    static Card fromString(const QString& cardStr);
 private:
-    static int RankNameToInt(const QString& rankName) {
-        if (rankName == "Ace") return 1;
-        if (rankName == "Jack") return 11; // تغییر از Soldier به Jack
-        if (rankName == "Queen") return 12;
-        if (rankName == "King") return 13;
-        bool ok;
-        int rank = rankName.toInt(&ok);
-        return ok ? rank : -1;
-    }
+    static int RankNameToInt(const QString& rankName);
 };
 
 #endif // CARD_H

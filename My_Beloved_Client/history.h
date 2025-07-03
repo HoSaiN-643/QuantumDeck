@@ -14,12 +14,17 @@ class History : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit History(Client* client,QWidget *parent = nullptr);
+    explicit History(Client* client, QWidget *parent = nullptr);
     ~History();
+
+    void displayHistory(const QStringList &history);
+
+private slots:
+    void onBackButtonClicked();
 
 private:
     Ui::History *ui;
-    Client* client;
+    Client *client;
 };
 
 #endif // HISTORY_H

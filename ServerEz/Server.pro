@@ -12,6 +12,7 @@ SOURCES += \
     PreGame.cpp \
     card.cpp \
     cardmanager.cpp \
+    close.cpp \
     game.cpp \
     main.cpp \
     manager.cpp \
@@ -23,13 +24,15 @@ HEADERS += \
     PreGame.h \
     card.h \
     cardmanager.h \
+    close.h \
     game.h \
     manager.h \
     memberdatabasemanager.h \
     server.h \
 
 
-FORMS +=
+FORMS += \
+    close.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

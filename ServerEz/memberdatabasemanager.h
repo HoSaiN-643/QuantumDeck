@@ -4,41 +4,32 @@
 #include <QObject>
 #include <QSqlDatabase>
 #include <QTcpSocket>
-#include <QVariantMap>
 
 class MemberDatabaseManager : public QObject
 {
     Q_OBJECT
+
 public:
     explicit MemberDatabaseManager(const QString &dbPath, QObject *parent = nullptr);
     ~MemberDatabaseManager();
 
-    bool open();
-    void close();
-    bool createMemberTable();
+    QString getUsernameFromEmail(const QString &email);
+    QString getPasswordFromPhone(const QString &phone);
+    bool isValidSignup(const QString &firstName, const QString &lastName, const QString &phone,
+                       const QString &email, const QString &username, const QString &password);
+    bool addMember(const QString &firstName, const QString &lastName, const QString &phone,
+                   const QString &email, const QString &username, const QString &password);
+    bool updateMemberAllFields(const QString &oldUsername, const QString &firstName,
+                               const QString &lastName, const QString &phone, const QString &email,
+                               const QString &newUsername, const QString &password);
+    bool isUsernameTaken(const QString &username);
+    bool isEmailTaken(const QString &email);
+    QVariantMap getMemberInfo(const QString &username);
+    QList<QVariantMap> getGameHistory(const QString &username);
+    bool addGameHistory(const QString &username, const QString &player1, const QString &player2, const QString &winner);
 
-    bool addMember(QTcpSocket *client,
-                   const QString &firstname,
-                   const QString &lastname,
-                   const QString &email,
-                   const QString &phone,
-                   const QString &username,
-                   const QString &password);
-
-
-
-    QVariantMap GetMemberByUsername(const QString &username);
-    QVariantMap GetMemberByEmail(const QString &email);
-    QVariantMap GetMemberByPhone(const QString &phone);
-    QList<QVariantMap> getAllMembers();
-
-    bool updateMemberAllFields(QTcpSocket *socket, const QString &oldUsername, const QString &firstname, const QString &lastname, const QString &phone, const QString &email, const QString &newUsername, const QString &newPassword);
 private:
-    QString m_dbPath;
-    QString m_connectionName;
-    QSqlDatabase m_db;
-
-    QVariantMap fetchMemberBy(const QString &column, const QVariant &value);
+    QSqlDatabase db;
 };
 
 #endif // MEMBERDATABASEMANAGER_H

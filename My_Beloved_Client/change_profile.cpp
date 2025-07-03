@@ -2,55 +2,38 @@
 #include "ui_change_profile.h"
 #include "InputValidator.h"
 #include <QMessageBox>
+#include <QVector>
+#include "client.h"
+#include <QDebug>
 
-Change_profile::Change_profile(Player& player, Client* client, QWidget *parent)
+Change_profile::Change_profile(Player& player, Client *client, QWidget *parent)
     : QMainWindow(parent),
     ui(new Ui::Change_profile),
     player(player),
     client(client)
 {
-    if (!client) {
-        QMessageBox::critical(this, "Error", "No connection to the server.");
-        close();
-        return;
-    }
-
     ui->setupUi(this);
-
-    // Store original values for comparison
-    original_values.phone = player.phone();
-    original_values.firstname = player.firstName();
-    original_values.lastname = player.lastName();
-    original_values.email = player.email();
-    original_values.username = player.username();
-
-    // Populate fields with player data (except password fields)
-    ui->phone_lineEdit->setText(player.phone());
+    ui->save_button->setEnabled(false);
     ui->firstname_lineEdit->setText(player.firstName());
     ui->lastname_lineEdit->setText(player.lastName());
     ui->email_lineEdit->setText(player.email());
+    ui->phone_lineEdit->setText(player.phone());
     ui->username_lineEdit->setText(player.username());
+    ui->current_password_lineEdit->setText("");
+    ui->new_password_lineEdit->setText("");
+    ui->confirm_new_password_lineEdit->setText("");
 
-    // Clear password fields
-    ui->current_password_lineEdit->clear();
-    ui->new_password_lineEdit->clear();
-    ui->confirm_new_password_lineEdit->clear();
+    QVector<QLineEdit*> edits = {
+        ui->firstname_lineEdit, ui->lastname_lineEdit, ui->email_lineEdit, ui->phone_lineEdit,
+        ui->username_lineEdit, ui->current_password_lineEdit, ui->new_password_lineEdit, ui->confirm_new_password_lineEdit
+    };
+    for (QLineEdit* edit : edits) {
+        connect(edit, &QLineEdit::textChanged, this, &Change_profile::validateFields);
+    }
+    connect(ui->save_button, &QPushButton::clicked, this, &Change_profile::onUpdateButtonClicked);
 
-    // Disable save button initially
-    ui->save_button->setEnabled(false);
-
-    // Connect textChanged signals to detect changes
-    connect(ui->phone_lineEdit, &QLineEdit::textChanged, this, &Change_profile::onFieldChanged);
-    connect(ui->firstname_lineEdit, &QLineEdit::textChanged, this, &Change_profile::onFieldChanged);
-    connect(ui->lastname_lineEdit, &QLineEdit::textChanged, this, &Change_profile::onFieldChanged);
-    connect(ui->email_lineEdit, &QLineEdit::textChanged, this, &Change_profile::onFieldChanged);
-    connect(ui->username_lineEdit, &QLineEdit::textChanged, this, &Change_profile::onFieldChanged);
-    connect(ui->current_password_lineEdit, &QLineEdit::textChanged, this, &Change_profile::onFieldChanged);
-    connect(ui->new_password_lineEdit, &QLineEdit::textChanged, this, &Change_profile::onFieldChanged);
-    connect(ui->confirm_new_password_lineEdit, &QLineEdit::textChanged, this, &Change_profile::onFieldChanged);
-
-    // Connect save button
-    connect(ui->save_button, &QPushButton::clicked, this, &Change_profile::onSaveButtonClicked);
+    // فراخوانی اولیه برای بررسی مقادیر پیش‌فرض
+    validateFields();
 }
 
 Change_profile::~Change_profile()
@@ -58,91 +41,69 @@ Change_profile::~Change_profile()
     delete ui;
 }
 
-void Change_profile::onFieldChanged()
+void Change_profile::onUpdateButtonClicked()
 {
-    // Check if any field has changed
-    bool has_changes =
-        ui->phone_lineEdit->text().trimmed() != original_values.phone ||
-        ui->firstname_lineEdit->text().trimmed() != original_values.firstname ||
-        ui->lastname_lineEdit->text().trimmed() != original_values.lastname ||
-        ui->email_lineEdit->text().trimmed() != original_values.email ||
-        ui->username_lineEdit->text().trimmed() != original_values.username ||
-        !ui->current_password_lineEdit->text().isEmpty() ||
-        !ui->new_password_lineEdit->text().isEmpty() ||
-        !ui->confirm_new_password_lineEdit->text().isEmpty();
-
-    ui->save_button->setEnabled(has_changes);
-}
-
-void Change_profile::onSaveButtonClicked()
-{
-    // غیرفعال کردن دکمه ذخیره تا زمانی که پردازش کامل شود
-    ui->save_button->setEnabled(false);
-
-    // دریافت مقادیر از فیلدهای ورودی
-    QString phone = ui->phone_lineEdit->text().trimmed();
-    QString firstname = ui->firstname_lineEdit->text().trimmed();
-    QString lastname = ui->lastname_lineEdit->text().trimmed();
+    QString firstName = ui->firstname_lineEdit->text().trimmed();
+    QString lastName = ui->lastname_lineEdit->text().trimmed();
     QString email = ui->email_lineEdit->text().trimmed();
-    QString username = ui->username_lineEdit->text().trimmed();
-    QString current_password = ui->current_password_lineEdit->text();
-    QString new_password = ui->new_password_lineEdit->text();
-    QString confirm_new_password = ui->confirm_new_password_lineEdit->text();
+    QString phone = ui->phone_lineEdit->text().trimmed();
+    QString newUsername = ui->username_lineEdit->text().trimmed();
+    QString oldPassword = ui->current_password_lineEdit->text().trimmed();
+    QString newPassword = ui->new_password_lineEdit->text().trimmed();
+    QString confirmPassword = ui->confirm_new_password_lineEdit->text().trimmed();
 
-    // لیست خطاها برای اعتبارسنجی
     QStringList errors;
+    QString errorMsg;
 
-    // اعتبارسنجی فیلدهای اصلی با استفاده از InputValidator
-    if (QString error = InputValidator::validateName(firstname, "First name"); !error.isEmpty())
-        errors << error;
-    if (QString error = InputValidator::validateName(lastname, "Last name"); !error.isEmpty())
-        errors << error;
-    if (QString error = InputValidator::validateEmail(email); !error.isEmpty())
-        errors << error;
-    if (QString error = InputValidator::validatePhone(phone); !error.isEmpty())
-        errors << error;
-    if (QString error = InputValidator::validateUsername(username); !error.isEmpty())
-        errors << error;
+    if (!(errorMsg = InputValidator::validateName(firstName, "First Name")).isEmpty())
+        errors << errorMsg;
+    if (!(errorMsg = InputValidator::validateName(lastName, "Last Name")).isEmpty())
+        errors << errorMsg;
+    if (!(errorMsg = InputValidator::validateEmail(email)).isEmpty())
+        errors << errorMsg;
+    if (!(errorMsg = InputValidator::validatePhone(phone)).isEmpty())
+        errors << errorMsg;
+    if (!(errorMsg = InputValidator::validateUsername(newUsername)).isEmpty())
+        errors << errorMsg;
 
-    // مدیریت تغییر رمز عبور
-    QString password_to_send;
-    bool password_change_attempted = !current_password.isEmpty() && !new_password.isEmpty() && !confirm_new_password.isEmpty();
-
-    if (password_change_attempted) {
-        // کاربر قصد تغییر رمز عبور دارد
-        if (current_password != player.password()) {
-            qDebug() << player.password();
-            errors << "Current password is incorrect.";
-        }
-        if (new_password != confirm_new_password) {
-            errors << "New password and confirmation do not match.";
-        }
-        if (QString error = InputValidator::validatePassword(new_password); !error.isEmpty()) {
-            errors << error;
-        }
-        if (errors.isEmpty()) {
-            // اگر همه چیز درست بود، رمز جدید را برای ارسال تنظیم می‌کنیم
-            password_to_send = new_password;
-        }
-    } else {
-        // کاربر قصد تغییر رمز عبور ندارد یا فیلدها کامل پر نشده‌اند
-        password_to_send = player.password();
+    if (oldPassword != player.password()) {
+        errors << "Current password is incorrect";
     }
 
-    // نمایش خطاها در صورت وجود
+    bool passwordChanged = !newPassword.isEmpty() || !confirmPassword.isEmpty();
+    if (passwordChanged) {
+        if (!(errorMsg = InputValidator::validatePassword(newPassword)).isEmpty())
+            errors << errorMsg;
+        if (newPassword != confirmPassword)
+            errors << "New password and confirm password do not match";
+    }
+
     if (!errors.isEmpty()) {
-        QString errorText = "Please fix the following errors:\n\n";
-        errorText += errors.join("\n");
-        QMessageBox::warning(this, "Invalid Input", errorText);
-        ui->save_button->setEnabled(true);
+        QMessageBox::warning(this, "Invalid Input", errors.join("\n"));
         return;
     }
 
-    // ساخت پیام برای سرور با ۸ فیلد
-    QString message = QString("C[CF][%1][%2][%3][%4][%5][%6][%7]")
-                          .arg(firstname, lastname, email, phone, username, password_to_send, original_values.username);
-    qDebug() <<"message from change profile : " << message;
-    qDebug() << "player info from change profile: " << player.firstName() << player.lastName() << player.email() << player.phone() << player.username() << player.password();
-    // ارسال پیام به سرور
-    client->WriteToServer(message);
+    QString passwordToSend = passwordChanged ? newPassword : player.password();
+    QString data = QString("C[CF][%1][%2][%3][%4][%5][%6][%7]\n")
+                       .arg(firstName, lastName, phone, email, newUsername, passwordToSend, player.username());
+    client->WriteToServer(data);
+}
+
+void Change_profile::validateFields()
+{
+    // بررسی پر بودن فیلدهای غیر رمز عبور
+    bool allNonPasswordFilled =
+        !ui->firstname_lineEdit->text().trimmed().isEmpty() &&
+        !ui->lastname_lineEdit->text().trimmed().isEmpty() &&
+        !ui->email_lineEdit->text().trimmed().isEmpty() &&
+        !ui->phone_lineEdit->text().trimmed().isEmpty() &&
+        !ui->username_lineEdit->text().trimmed().isEmpty() &&
+        !ui->current_password_lineEdit->text().trimmed().isEmpty();
+
+    // فعال کردن دکمه ذخیره‌سازی
+    ui->save_button->setEnabled(allNonPasswordFilled);
+
+    // لاگ برای دیباگ
+    qDebug() << "validateFields: allNonPasswordFilled=" << allNonPasswordFilled
+             << ", save_button enabled=" << allNonPasswordFilled;
 }

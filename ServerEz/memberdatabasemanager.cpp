@@ -1,262 +1,214 @@
 #include "memberdatabasemanager.h"
-#include <QSqlError>
 #include <QSqlQuery>
+#include <QSqlError>
 #include <QDebug>
-#include <QRegularExpression>
 
 MemberDatabaseManager::MemberDatabaseManager(const QString &dbPath, QObject *parent)
-    : QObject(parent), m_dbPath(dbPath)
+    : QObject(parent)
 {
-    m_connectionName = QString("MemberDB_%1").arg(reinterpret_cast<quintptr>(this));
-    m_db = QSqlDatabase::addDatabase("QSQLITE", m_connectionName);
-    m_db.setDatabaseName(m_dbPath);
+    db = QSqlDatabase::addDatabase("QSQLITE", "members_db");
+    db.setDatabaseName(dbPath);
+    if (!db.open()) {
+        qDebug() << "Cannot open database:" << db.lastError().text();
+        return;
+    }
+
+    QSqlQuery query(db);
+    query.exec("CREATE TABLE IF NOT EXISTS members ("
+               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+               "firstName TEXT NOT NULL, "
+               "lastName TEXT NOT NULL, "
+               "phone TEXT NOT NULL, "
+               "email TEXT NOT NULL UNIQUE, "
+               "username TEXT NOT NULL UNIQUE, "
+               "password TEXT NOT NULL)");
+    query.exec("CREATE TABLE IF NOT EXISTS game_history ("
+               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+               "username TEXT NOT NULL, "
+               "player1 TEXT NOT NULL, "
+               "player2 TEXT NOT NULL, "
+               "winner TEXT NOT NULL, "
+               "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)");
+
+    // اضافه کردن کاربر تست
+    if (!isUsernameTaken("hosein_643")) {
+        addMember("Hosein", "Test", "1234567890", "hosein@example.com", "hosein_643", "Aot643710");
+        qDebug() << "Test user 'hosein_643' added to database.";
+    }
 }
 
 MemberDatabaseManager::~MemberDatabaseManager()
 {
-    close();
+    if (db.isOpen()) {
+        db.close();
+    }
+    QSqlDatabase::removeDatabase("members_db");
 }
 
-bool MemberDatabaseManager::open()
+QString MemberDatabaseManager::getUsernameFromEmail(const QString &email)
 {
-    if (!m_db.open()) {
-        qWarning() << "MemberDB: Cannot open database:" << m_db.lastError().text();
-        return false;
+    QSqlQuery query(db);
+    query.prepare("SELECT username FROM members WHERE email = :email");
+    query.bindValue(":email", email);
+    if (query.exec() && query.next()) {
+        return query.value(0).toString();
     }
-    return createMemberTable();
+    return QString();
 }
 
-void MemberDatabaseManager::close()
+QString MemberDatabaseManager::getPasswordFromPhone(const QString &phone)
 {
-    if (m_db.isOpen()) m_db.close();
-    QSqlDatabase::removeDatabase(m_connectionName);
+    QSqlQuery query(db);
+    query.prepare("SELECT password FROM members WHERE phone = :phone");
+    query.bindValue(":phone", phone);
+    if (query.exec() && query.next()) {
+        return query.value(0).toString();
+    }
+    return QString();
 }
 
-bool MemberDatabaseManager::createMemberTable()
+bool MemberDatabaseManager::isValidSignup(const QString &firstName, const QString &lastName,
+                                          const QString &phone, const QString &email,
+                                          const QString &username, const QString &password)
 {
-    QSqlQuery q(m_db);
-    const QString sql = R"(
-        CREATE TABLE IF NOT EXISTS members (
-            firstname TEXT NOT NULL,
-            lastname TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            phone TEXT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
-        );
-    )";
-    if (!q.exec(sql)) {
-        qWarning() << "MemberDB: create table failed:" << q.lastError().text();
-        return false;
-    }
-    return true;
+    return !firstName.isEmpty() && !lastName.isEmpty() && !phone.isEmpty() &&
+           !email.isEmpty() && !username.isEmpty() && !password.isEmpty();
 }
 
-bool MemberDatabaseManager::addMember(QTcpSocket *client,
-                                      const QString &firstname,
-                                      const QString &lastname,
-                                      const QString &email,
-                                      const QString &phone,
-                                      const QString &username,
-                                      const QString &password)
+bool MemberDatabaseManager::addMember(const QString &firstName, const QString &lastName,
+                                      const QString &phone, const QString &email,
+                                      const QString &username, const QString &password)
 {
-    if (!client) {
-        qWarning() << "MemberDB: Null client in addMember";
-        return false;
-    }
-    if (!m_db.isOpen()) {
-        qWarning() << "MemberDB: addMember called but DB is not open!";
-        client->write("S[ERROR][Database not open]\n");
-        client->flush();
+    if (isUsernameTaken(username) || isEmailTaken(email)) {
         return false;
     }
 
-    // بررسی ساده فرمت ایمیل
+    QSqlQuery query(db);
+    query.prepare("INSERT INTO members (firstName, lastName, phone, email, username, password) "
+                  "VALUES (:firstName, :lastName, :phone, :email, :username, :password)");
+    query.bindValue(":firstName", firstName);
+    query.bindValue(":lastName", lastName);
+    query.bindValue(":phone", phone);
+    query.bindValue(":email", email);
+    query.bindValue(":username", username);
+    query.bindValue(":password", password);
 
-
-    // بررسی خالی نبودن فیلدها
-    if (firstname.isEmpty() || lastname.isEmpty() || username.isEmpty() || password.isEmpty()) {
-        client->write("S[ERROR][Required fields cannot be empty]\n");
-        client->flush();
-        return false;
+    if (query.exec()) {
+        return true;
     }
-
-    m_db.transaction();
-
-    QSqlQuery chk(m_db);
-    chk.prepare("SELECT COUNT(*) FROM members WHERE username = :u OR email = :e;");
-    chk.bindValue(":u", username);
-    chk.bindValue(":e", email);
-    if (!chk.exec() || !chk.next()) {
-        qWarning() << "MemberDB: duplicate check failed:" << chk.lastError().text();
-        m_db.rollback();
-        client->write("S[ERROR][Database query error]\n");
-        client->flush();
-        return false;
-    }
-    if (chk.value(0).toInt() > 0) {
-        m_db.rollback();
-        client->write("S[ERROR][Username or email already exists]\n");
-        client->flush();
-        return false;
-    }
-
-    QSqlQuery ins(m_db);
-    const QString sql = R"(
-        INSERT INTO members
-            (firstname, lastname, email, phone, username, password)
-        VALUES
-            (:f, :l, :e, :ph, :u, :p)
-    )";
-    ins.prepare(sql);
-    ins.bindValue(":f", firstname);
-    ins.bindValue(":l", lastname);
-    ins.bindValue(":e", email);
-    ins.bindValue(":ph", phone);
-    ins.bindValue(":u", username);
-    ins.bindValue(":p", password); // هشدار: رمز عبور باید هش شود (برای آینده)
-
-    if (!ins.exec()) {
-        qWarning() << "MemberDB: insert failed: " << ins.lastError().text();
-        m_db.rollback();
-        client->write("S[ERROR][Database insert failed]\n");
-        client->flush();
-        return false;
-    }
-
-    m_db.commit();
-    client->write("S[OK][Signup successful]\n");
-    client->flush();
-    qDebug() << "MemberDB: Member added:" << username;
-    return true;
+    qDebug() << "Add member failed:" << query.lastError().text();
+    return false;
 }
 
-bool MemberDatabaseManager::updateMemberAllFields(QTcpSocket *socket, const QString &oldUsername,
-                                                  const QString &firstname, const QString &lastname,
-                                                  const QString &phone, const QString &email,
-                                                  const QString &newUsername, const QString &newPassword)
+bool MemberDatabaseManager::updateMemberAllFields(const QString &oldUsername, const QString &firstName,
+                                                  const QString &lastName, const QString &phone,
+                                                  const QString &email, const QString &newUsername,
+                                                  const QString &password)
 {
-    if (!socket) {
-        qWarning() << "MemberDB: Null socket in updateMemberAllFields";
+    if (oldUsername != newUsername && isUsernameTaken(newUsername)) {
         return false;
     }
-
-    // بررسی وجود نام کاربری قدیمی
-    QVariantMap existingMember = GetMemberByUsername(oldUsername);
-    if (existingMember.isEmpty()) {
-        qDebug() << "Old username not found in database during update:" << oldUsername;
-        socket->write("C[CF][NOTFOUND][Old username not found in database.]\n");
-        socket->flush();
-        return false;
-    }
-
-    // بررسی فرمت ایمیل
-
-
-    // بررسی خالی نبودن فیلدها
-    if (firstname.isEmpty() || lastname.isEmpty() || newUsername.isEmpty() || newPassword.isEmpty()) {
-        socket->write("C[CF][ERROR][Required fields cannot be empty]\n");
-        socket->flush();
-        return false;
-    }
-
-    // بررسی وجود نام کاربری جدید
-    if (newUsername != oldUsername) {
-        QVariantMap duplicateMember = GetMemberByUsername(newUsername);
-        if (!duplicateMember.isEmpty()) {
-            qDebug() << "New username already exists during update:" << newUsername;
-            socket->write("C[CF][DUPLICATE][New username already exists.]\n");
-            socket->flush();
+    if (isEmailTaken(email)) {
+        QSqlQuery checkEmail(db);
+        checkEmail.prepare("SELECT username FROM members WHERE email = :email");
+        checkEmail.bindValue(":email", email);
+        checkEmail.exec();
+        if (checkEmail.next() && checkEmail.value(0).toString() != oldUsername) {
             return false;
         }
     }
 
-    // به‌روزرسانی اطلاعات
-    QSqlQuery updateQuery(m_db);
-    updateQuery.prepare("UPDATE members SET firstname = :firstname, lastname = :lastname, email = :email, phone = :phone, username = :username, password = :password WHERE username = :oldUsername");
-    updateQuery.bindValue(":firstname", firstname);
-    updateQuery.bindValue(":lastname", lastname);
-    updateQuery.bindValue(":email", email);
-    updateQuery.bindValue(":phone", phone);
-    updateQuery.bindValue(":username", newUsername);
-    updateQuery.bindValue(":password", newPassword);
-    updateQuery.bindValue(":oldUsername", oldUsername);
+    QSqlQuery query(db);
+    query.prepare("UPDATE members SET firstName = :firstName, lastName = :lastName, "
+                  "phone = :phone, email = :email, username = :newUsername, password = :password "
+                  "WHERE username = :oldUsername");
+    query.bindValue(":firstName", firstName);
+    query.bindValue(":lastName", lastName);
+    query.bindValue(":phone", phone);
+    query.bindValue(":email", email);
+    query.bindValue(":newUsername", newUsername);
+    query.bindValue(":password", password);
+    query.bindValue(":oldUsername", oldUsername);
 
-    if (!updateQuery.exec()) {
-        qDebug() << "Failed to update member data for username:" << oldUsername << "Error:" << updateQuery.lastError().text();
-        socket->write(QString("C[CF][ERROR][Failed to update member data: %1]\n").arg(updateQuery.lastError().text()).toUtf8());
-        socket->flush();
-        return false;
+    if (query.exec()) {
+        return true;
     }
-
-    qDebug() << "Member data updated successfully from username:" << oldUsername << "to new username:" << newUsername;
-    socket->write(QString("C[CF][OK][Information updated successfully][%1][%2][%3][%4][%5][%6]\n")
-                      .arg(firstname, lastname, phone, email, newUsername, newPassword).toUtf8());
-    socket->flush();
-    return true;
+    qDebug() << "Update member failed:" << query.lastError().text();
+    return false;
 }
 
-QVariantMap MemberDatabaseManager::fetchMemberBy(const QString &column, const QVariant &value)
+bool MemberDatabaseManager::isUsernameTaken(const QString &username)
 {
-    QVariantMap m;
-    if (!m_db.isOpen()) return m;
+    QSqlQuery query(db);
+    query.prepare("SELECT COUNT(*) FROM members WHERE username = :username");
+    query.bindValue(":username", username);
+    query.exec();
+    query.next();
+    return query.value(0).toInt() > 0;
+}
 
-    QString stmt = QString(R"(
-        SELECT firstname, lastname, email, phone, username, password
-        FROM members
-        WHERE %1 = :val;
-    )").arg(column);
+bool MemberDatabaseManager::isEmailTaken(const QString &email)
+{
+    QSqlQuery query(db);
+    query.prepare("SELECT COUNT(*) FROM members WHERE email = :email");
+    query.bindValue(":email", email);
+    query.exec();
+    query.next();
+    return query.value(0).toInt() > 0;
+}
 
-    QSqlQuery q(m_db);
-    q.prepare(stmt);
-    q.bindValue(":val", value);
-    if (q.exec() && q.next()) {
-        m["firstname"] = q.value("firstname").toString();
-        m["lastname"] = q.value("lastname").toString();
-        m["email"] = q.value("email").toString();
-        m["phone"] = q.value("phone").toString();
-        m["username"] = q.value("username").toString();
-        m["password"] = q.value("password").toString();
+QVariantMap MemberDatabaseManager::getMemberInfo(const QString &username)
+{
+    QVariantMap info;
+    QSqlQuery query(db);
+    query.prepare("SELECT firstName, lastName, phone, email, username, password "
+                  "FROM members WHERE username = :username");
+    query.bindValue(":username", username);
+    if (query.exec() && query.next()) {
+        info["firstName"] = query.value("firstName").toString();
+        info["lastName"] = query.value("lastName").toString();
+        info["phone"] = query.value("phone").toString();
+        info["email"] = query.value("email").toString();
+        info["username"] = query.value("username").toString();
+        info["password"] = query.value("password").toString();
     }
-    return m;
+    return info;
 }
 
-QVariantMap MemberDatabaseManager::GetMemberByUsername(const QString &username)
+QList<QVariantMap> MemberDatabaseManager::getGameHistory(const QString &username)
 {
-    return fetchMemberBy("username", username);
-}
-
-QVariantMap MemberDatabaseManager::GetMemberByEmail(const QString &email)
-{
-    return fetchMemberBy("email", email);
-}
-
-QVariantMap MemberDatabaseManager::GetMemberByPhone(const QString &phone)
-{
-    return fetchMemberBy("phone", phone);
-}
-
-QList<QVariantMap> MemberDatabaseManager::getAllMembers()
-{
-    QList<QVariantMap> list;
-    if (!m_db.isOpen()) return list;
-
-    QSqlQuery q(m_db);
-    const QString stmt = R"(
-        SELECT firstname, lastname, email, phone, username, password
-        FROM members;
-    )";
-    if (q.exec(stmt)) {
-        while (q.next()) {
-            QVariantMap m;
-            m["firstname"] = q.value("firstname").toString();
-            m["lastname"] = q.value("lastname").toString();
-            m["email"] = q.value("email").toString();
-            m["phone"] = q.value("phone").toString();
-            m["username"] = q.value("username").toString();
-            m["password"] = q.value("password").toString();
-            list.append(m);
+    QList<QVariantMap> history;
+    QSqlQuery query(db);
+    query.prepare("SELECT player1, player2, winner FROM game_history WHERE username = :username");
+    query.bindValue(":username", username);
+    if (query.exec()) {
+        while (query.next()) {
+            QVariantMap game;
+            game["player1"] = query.value("player1").toString();
+            game["player2"] = query.value("player2").toString();
+            game["winner"] = query.value("winner").toString();
+            history.append(game);
         }
+    } else {
+        qDebug() << "Get game history failed:" << query.lastError().text();
     }
-    return list;
+    return history;
+}
+
+bool MemberDatabaseManager::addGameHistory(const QString &username, const QString &player1,
+                                           const QString &player2, const QString &winner)
+{
+    QSqlQuery query(db);
+    query.prepare("INSERT INTO game_history (username, player1, player2, winner) "
+                  "VALUES (:username, :player1, :player2, :winner)");
+    query.bindValue(":username", username);
+    query.bindValue(":player1", player1);
+    query.bindValue(":player2", player2);
+    query.bindValue(":winner", winner);
+
+    if (query.exec()) {
+        return true;
+    }
+    qDebug() << "Add game history failed:" << query.lastError().text();
+    return false;
 }

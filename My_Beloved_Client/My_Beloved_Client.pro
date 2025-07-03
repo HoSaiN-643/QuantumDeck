@@ -1,7 +1,5 @@
-QT       += core gui network
-
+QT += core gui network multimedia multimediawidgets
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
-
 CONFIG += c++17
 
 # You can make your code fail to compile if it uses deprecated APIs.
@@ -13,6 +11,7 @@ SOURCES += \
     choose_mode.cpp \
     client.cpp \
     close.cpp \
+    gamewindow.cpp \
     history.cpp \
     log.cpp \
     login.cpp \
@@ -23,7 +22,6 @@ SOURCES += \
     recoverpass.cpp \
     search_window.cpp \
     signup.cpp \
-    start.cpp \
     InputValidator.cpp
 
 HEADERS += \
@@ -32,6 +30,7 @@ HEADERS += \
     client.h \
     close.h \
     connect.h \
+    gamewindow.h \
     history.h \
     log.h \
     login.h \
@@ -40,7 +39,6 @@ HEADERS += \
     recoverpass.h \
     search_window.h \
     signup.h \
-    start.h \
     InputValidator.h
 
 FORMS += \
@@ -48,6 +46,7 @@ FORMS += \
     choose_mode.ui \
     close.ui \
     connect.ui \
+    gamewindow.ui \
     history.ui \
     log.ui \
     login.ui \
@@ -60,3 +59,13 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    resources.qrc
+
+# Optional: Ensure debug and release output are separate
+CONFIG(debug, debug|release) {
+    DESTDIR = build/debug
+} else {
+    DESTDIR = build/release
+}

@@ -18,22 +18,19 @@ Log::Log(Player& player, Client *client, QWidget *parent)
 
 Log::~Log()
 {
+    delete l;
+    delete s;
     delete ui;
-}
-
-void Log::Show()
-{
-    this->show();
 }
 
 void Log::Login_Btn_clicked()
 {
-    this->close();
+    this->hide();
     l->show();
 }
 
 void Log::Signup_btn_clicked()
 {
-    this->close();
+    this->hide();
     s->show();
 }

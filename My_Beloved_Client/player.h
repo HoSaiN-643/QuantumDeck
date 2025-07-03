@@ -38,7 +38,6 @@ public:
     bool operator==(const Player &other) const;
     bool operator!=(const Player &other) const { return !(*this == other); }
 
-
 private:
     QString m_firstname;
     QString m_lastname;

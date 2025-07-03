@@ -1,6 +1,4 @@
-#ifndef LOG_H
-#define LOG_H
-
+#pragma once
 #include <QMainWindow>
 
 namespace Ui { class Log; }
@@ -31,5 +29,3 @@ private:
     Signup *s;
     Player &player;
 };
-
-#endif // LOG_H

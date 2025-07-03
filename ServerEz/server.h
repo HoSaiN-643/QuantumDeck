@@ -1,45 +1,44 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <QObject>
 #include <QTcpServer>
-#include <QTcpSocket>
 #include <QMap>
-#include <QHostAddress>
+#include "pregame.h"
 #include "memberdatabasemanager.h"
+#include "game.h"
 
-class PreGame;
-
-class SERVER : public QObject
+class SERVER : public QTcpServer
 {
     Q_OBJECT
 
-    QTcpServer*                 server;
-    QMap<QTcpSocket*, QString>  clients;
-    int                         total;
-    MemberDatabaseManager&      db;
-    PreGame*                    lobby;
-
 public:
-    explicit SERVER(MemberDatabaseManager& db, const QString& address, int port = 8888, QObject* parent = nullptr);
+    explicit SERVER(MemberDatabaseManager* dbManager, const QString& address, QObject *parent = nullptr);
     ~SERVER();
 
-private:
-    QStringList extractFields(const QString &s) const;
-
-    void handleLogin(QTcpSocket *client, const QStringList &f);
-    void handleSignup(QTcpSocket *client, const QStringList &f);
-    void handleRecover(QTcpSocket *client, const QStringList &f);
-    void handleClientCommand(QTcpSocket *client, const QStringList &f);
-    void handlePreGame(QTcpSocket *client, const QStringList &f);
-    void handleUnknown(QTcpSocket *client);
+    void setIP(const QString &address);
+    void setPort(quint16 port);
 
 private slots:
-    void OnNewConnection();
-    void OnReadyRead();
-    void OnClientDisconnection(QTcpSocket* client);
-    void onGameStarted(const QStringList& players); // اسلات جدید برای شروع بازی
-    void onGameFinished();
+    void onNewConnection();
+    void onReadyRead();
+    void onClientDisconnection();
+    void onStartGame(const QStringList &players);
+
+private:
+    void handleLogin(QTcpSocket *client, const QStringList &fields);
+    void handleSignup(QTcpSocket *client, const QStringList &fields);
+    void handleRecover(QTcpSocket *client, const QStringList &fields);
+    void handlePreGame(QTcpSocket *client, const QStringList &fields);
+    void handleUpdateProfile(QTcpSocket *client, const QStringList &fields);
+    void handleUnknown(QTcpSocket *client);
+    QStringList extractFields(const QString &payload) const;
+
+    MemberDatabaseManager* dbManager;
+    QString address;
+    quint16 port;
+    QMap<QTcpSocket*, QString> clients;
+    PreGame* preGame;
+    Game* game;
 };
 
 #endif // SERVER_H

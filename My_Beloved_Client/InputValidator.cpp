@@ -20,7 +20,6 @@ QString InputValidator::validateName(const QString& name, const QString& fieldNa
     if (trimmed.length() < 2)
         return QString("%1 must be at least 2 characters.").arg(fieldName);
 
-
     QRegularExpression r(R"(^[a-zA-Zآ-ی]{2,}$)");
     if (!r.match(trimmed).hasMatch())
         return QString("%1 must contain only letters (a-z, A-Z, or آ-ی).").arg(fieldName);

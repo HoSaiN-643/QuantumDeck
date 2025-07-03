@@ -1,69 +1,68 @@
 #include "pregame.h"
-#include <QString>
 #include <QDebug>
 
-PreGame::PreGame(int count, QPair<QTcpSocket*, QString> p, QObject *parent)
-    : QObject(parent), PlayerCnt(count), WaitingPlayers(1)
+PreGame::PreGame(int playerCount, QPair<QTcpSocket*, QString> player, QObject *parent)
+    : QObject(parent), playerCount(playerCount), waitingPlayers(1)
 {
-    Players.append(p);
+    players.append(player);
     sendSearching();
 }
 
 PreGame::~PreGame()
 {
-    for (auto &player : Players) {
-        if (player.first) {
-            player.first->disconnect(); // قطع اتصال سوکت‌ها
+    for (auto &player : players) {
+        if (player.first && player.first->isOpen()) {
+            player.first->write("P[ERROR][Game cancelled due to disconnection]\n");
+            player.first->flush();
+            player.first->disconnectFromHost();
         }
     }
 }
 
-void PreGame::AddPlayer(QPair<QTcpSocket*, QString> p)
+void PreGame::addPlayer(QPair<QTcpSocket*, QString> player)
 {
-    if (!p.first) {
-        qDebug() << "Attempted to add null client to PreGame";
+    if (!player.first || !player.first->isOpen()) {
+        qDebug() << "Attempted to add invalid client to PreGame";
         return;
     }
-    Players.append(p);
-    ++WaitingPlayers;
-    if (WaitingPlayers < PlayerCnt) {
+    players.append(player);
+    ++waitingPlayers;
+    if (waitingPlayers < playerCount) {
         sendSearching();
     } else {
-        IsServerFull = true;
         sendFound();
-        QStringList playerIds;
-        for (const auto& player : Players) {
-            playerIds << player.second;
+        QStringList playerUsernames;
+        for (const auto& player : players) {
+            playerUsernames << player.second;
         }
-        emit startGame(playerIds);
+        emit startGame(playerUsernames);
     }
 }
 
 void PreGame::sendSearching()
 {
     QString msg = QString("P[%1][%2][Searching for a match]\n")
-    .arg(PlayerCnt)
-        .arg(WaitingPlayers);
-    QByteArray raw = msg.toUtf8();
-    for (auto &pr : Players) {
-        if (pr.first && pr.first->isOpen()) {
-            pr.first->write(raw);
-            pr.first->flush();
+    .arg(playerCount)
+        .arg(waitingPlayers);
+    for (auto &player : players) {
+        if (player.first && player.first->isOpen()) {
+            player.first->write(msg.toUtf8());
+            player.first->flush();
         }
     }
 }
 
 void PreGame::sendFound()
 {
-    for (auto &me : Players) {
+    for (auto &me : players) {
         if (!me.first || !me.first->isOpen()) continue;
         QStringList others;
-        for (auto &peer : Players) {
+        for (auto &peer : players) {
             if (peer.first && peer.first != me.first && peer.first->isOpen()) {
                 others << peer.second;
             }
         }
-        QString msg = QString("P[%1][Found]").arg(PlayerCnt);
+        QString msg = QString("P[%1][Found]").arg(playerCount);
         for (const auto &name : others) {
             msg += QString("[%1]").arg(name);
         }

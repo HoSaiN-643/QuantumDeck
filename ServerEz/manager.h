@@ -2,21 +2,21 @@
 #define MANAGER_H
 
 #include <QObject>
-#include <memberdatabasemanager.h>
-#include <server.h>
+#include "server.h"
+#include "memberdatabasemanager.h"
 
 class MANAGER : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit MANAGER();
+    explicit MANAGER(QObject *parent = nullptr);
+    ~MANAGER();
 
 private:
+    QString getLocalIPAddress();
     MemberDatabaseManager* db;
     SERVER* server;
-
-    QString getLocalIPAddress(); // New method to get the system's IP address
 };
 
 #endif // MANAGER_H

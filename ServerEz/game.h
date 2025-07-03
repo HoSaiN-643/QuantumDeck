@@ -7,30 +7,36 @@
 #include <QMap>
 #include <QTimer>
 #include "cardmanager.h"
+#include "memberdatabasemanager.h"
 
 class Game : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit Game(const QStringList &players, QMap<QTcpSocket*, QString> &clients, QObject *parent = nullptr);
+    explicit Game(const QStringList &players, QMap<QTcpSocket*, QString> &clients,
+                  MemberDatabaseManager &db, QObject *parent = nullptr);
+    ~Game();
+
     void start();
+    void processChatMessage(QTcpSocket *client, const QStringList &fields);
 
 private:
-    QStringList playerUsernames; // نام کاربری بازیکنان
-    QMap<QTcpSocket*, QString> &clients; // ارجاع به نقشه کلاینت‌ها
-    QVector<Card> player1Cards; // کارت‌های بازیکن اول
-    QVector<Card> player2Cards; // کارت‌های بازیکن دوم
-    int player1Wins; // تعداد برد بازیکن اول
-    int player2Wins; // تعداد برد بازیکن دوم
-    int currentRound; // راند فعلی
-    QVector<Card> currentDeck; // دسته کارت فعلی
-    QVector<Card> communityCards; // 7 کارت مشترک
-    QTimer *cardViewTimer; // تایمر 5 ثانیه برای نمایش کارت Diamond
-    int startingPlayerIndex; // اندیس بازیکن شروع‌کننده (0 یا 1)
-    bool waitingForPlayer1; // آیا منتظر انتخاب کارت بازیکن اول هستیم؟
-    bool waitingForPlayer2; // آیا منتظر انتخاب کارت بازیکن دوم هستیم؟
-    int currentTurn; // شماره نوبت فعلی در راند
+    QStringList playerUsernames;
+    QMap<QTcpSocket*, QString> &clients;
+    MemberDatabaseManager &db;
+    QVector<Card> player1Cards;
+    QVector<Card> player2Cards;
+    int player1Wins;
+    int player2Wins;
+    int currentRound;
+    QVector<Card> currentDeck;
+    QVector<Card> communityCards;
+    QTimer *cardViewTimer;
+    int startingPlayerIndex;
+    bool waitingForPlayer1;
+    bool waitingForPlayer2;
+    int currentTurn;
 
     void startRound();
     void sendDiamondCards();
@@ -41,11 +47,11 @@ private:
     void resetRound();
 
 signals:
-    void gameFinished(); // سیگنال برای پایان بازی
+    void gameFinished();
 
 private slots:
     void onCardViewTimeout();
-    void handleClientMessage(QTcpSocket *client, const QStringList &fields);
+    void handleClientMessage();
 };
 
 #endif // GAME_H

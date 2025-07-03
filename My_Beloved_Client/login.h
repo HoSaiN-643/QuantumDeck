@@ -4,6 +4,7 @@
 #include "client.h"
 
 class MainMenu;
+class RecoverPass;
 
 namespace Ui {
 class Login;
@@ -23,10 +24,12 @@ public slots:
 private slots:
     void Update_Login_Btn();
     void Login_Btn_Clicked();
+    void Recover_Btn_Clicked();
 
 private:
     Ui::Login *ui;
     Player& player;
     Client *client;
+    RecoverPass* RP;
     MainMenu *menuWindow;
 };

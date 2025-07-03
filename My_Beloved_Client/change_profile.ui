@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
-    <height>500</height>
+    <width>739</width>
+    <height>569</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -20,11 +20,60 @@
    <string>Change Profile</string>
   </property>
   <property name="layoutDirection">
-   <enum>Qt::RightToLeft</enum>
+   <enum>Qt::LayoutDirection::RightToLeft</enum>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="mainLayout">
-    <item>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="4" column="1">
+     <layout class="QHBoxLayout" name="buttonLayout">
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="save_button">
+        <property name="minimumSize">
+         <size>
+          <width>150</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Save profile changes</string>
+        </property>
+        <property name="text">
+         <string>Save Changes</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="3" column="0">
+     <spacer name="horizontalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Policy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="2" column="1">
      <widget class="QGroupBox" name="profileGroupBox">
       <property name="title">
        <string>Profile Information</string>
@@ -39,14 +88,14 @@
        </item>
        <item row="0" column="1">
         <widget class="QLineEdit" name="phone_lineEdit">
-         <property name="placeholderText">
-          <string>Example: 09123456789</string>
+         <property name="toolTip">
+          <string>Enter an 11-digit phone number</string>
          </property>
          <property name="inputMask">
           <string>09999999999</string>
          </property>
-         <property name="toolTip">
-          <string>Enter an 11-digit phone number</string>
+         <property name="placeholderText">
+          <string>Example: 09123456789</string>
          </property>
         </widget>
        </item>
@@ -87,11 +136,11 @@
        </item>
        <item row="3" column="1">
         <widget class="QLineEdit" name="email_lineEdit">
-         <property name="placeholderText">
-          <string>Example: example@domain.com</string>
-         </property>
          <property name="toolTip">
           <string>Enter a valid email address</string>
+         </property>
+         <property name="placeholderText">
+          <string>Example: example@domain.com</string>
          </property>
         </widget>
        </item>
@@ -112,7 +161,55 @@
       </layout>
      </widget>
     </item>
-    <item>
+    <item row="0" column="1">
+     <spacer name="verticalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Orientation::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Policy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="3" column="2">
+     <spacer name="horizontalSpacer_3">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Policy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="5" column="1">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Orientation::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Policy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="3" column="1">
      <widget class="QGroupBox" name="passwordGroupBox">
       <property name="title">
        <string>Change Password</string>
@@ -128,7 +225,7 @@
        <item row="0" column="1">
         <widget class="QLineEdit" name="current_password_lineEdit">
          <property name="echoMode">
-          <enum>QLineEdit::Password</enum>
+          <enum>QLineEdit::EchoMode::Password</enum>
          </property>
          <property name="placeholderText">
           <string>Enter your current password</string>
@@ -145,7 +242,7 @@
        <item row="1" column="1">
         <widget class="QLineEdit" name="new_password_lineEdit">
          <property name="echoMode">
-          <enum>QLineEdit::Password</enum>
+          <enum>QLineEdit::EchoMode::Password</enum>
          </property>
          <property name="placeholderText">
           <string>Enter your new password</string>
@@ -162,7 +259,7 @@
        <item row="2" column="1">
         <widget class="QLineEdit" name="confirm_new_password_lineEdit">
          <property name="echoMode">
-          <enum>QLineEdit::Password</enum>
+          <enum>QLineEdit::EchoMode::Password</enum>
          </property>
          <property name="placeholderText">
           <string>Re-enter your new password</string>
@@ -172,38 +269,15 @@
       </layout>
      </widget>
     </item>
-    <item>
-     <layout class="QHBoxLayout" name="buttonLayout">
-      <item>
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QPushButton" name="save_button">
-        <property name="text">
-         <string>Save Changes</string>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>150</width>
-          <height>40</height>
-         </size>
-        </property>
-        <property name="toolTip">
-         <string>Save profile changes</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+    <item row="1" column="1">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Change profile</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>

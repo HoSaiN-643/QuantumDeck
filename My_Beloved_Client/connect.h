@@ -1,6 +1,4 @@
-#ifndef CONNECT_H
-#define CONNECT_H
-
+#pragma once
 #include <QMainWindow>
 
 namespace Ui { class connect; }
@@ -17,7 +15,6 @@ public:
     explicit Connect(Player& player, Client *client, QWidget *parent = nullptr);
     ~Connect();
 
-
     void OnConnected();
     void OnErrorOccurred(const QString &errorString);
 
@@ -30,5 +27,3 @@ private:
     Log *logWindow;
     Player &player;
 };
-
-#endif // CONNECT_H

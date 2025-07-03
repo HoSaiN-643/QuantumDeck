@@ -15,12 +15,10 @@ class Search_Window : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit Search_Window(Client* client,QWidget *parent = nullptr);
+    explicit Search_Window(Client* client, QWidget *parent = nullptr);
     ~Search_Window();
 
-    void updateWaiting(int waiting,int  total) {
-
-    }
+    void updateSearchStatus(int waiting, int total);
 
 private slots:
     void updateDots();

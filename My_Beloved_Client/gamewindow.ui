@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GameWindow</class>
+ <widget class="QMainWindow" name="GameWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>QuantumDeck</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QHBoxLayout" name="mainLayout">
+    <item>
+     <widget class="QWidget" name="gameArea">
+      <layout class="QVBoxLayout" name="gameLayout">
+       <item alignment="Qt::AlignTop|Qt::AlignLeft">
+        <widget class="QLabel" name="opponentUsernameLabel">
+         <property name="text">
+          <string>Opponent: Unknown</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="opponentCardsWidget">
+         <layout class="QHBoxLayout" name="opponentCardsLayout"/>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="centerLayout">
+         <item>
+          <widget class="QLabel" name="remainingCardsLabel">
+           <property name="text">
+            <string>Remaining Cards: 52</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="roundLabel">
+           <property name="text">
+            <string>Round: 1</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="winnerLabel">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QWidget" name="playerCardsWidget">
+         <layout class="QHBoxLayout" name="playerCardsLayout"/>
+        </widget>
+       </item>
+       <item alignment="Qt::AlignBottom|Qt::AlignLeft">
+        <widget class="QLabel" name="playerUsernameLabel">
+         <property name="text">
+          <string>You: Unknown</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QWidget" name="chatArea">
+      <layout class="QVBoxLayout" name="chatLayout">
+       <item>
+        <widget class="QTextEdit" name="chatDisplay">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="chatInput"/>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>chatInput</sender>
+   <signal>returnPressed()</signal>
+   <receiver>GameWindow</receiver>
+   <slot>sendChatMessage()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>600</x>
+     <y>550</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>400</x>
+     <y>300</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

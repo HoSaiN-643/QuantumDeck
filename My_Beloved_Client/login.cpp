@@ -4,13 +4,16 @@
 #include "InputValidator.h"
 #include <QMessageBox>
 #include "mainmenu.h"
+#include "recoverpass.h"
+#include <QDebug>
 
 Login::Login(Player& player, Client *client, QWidget *parent)
     : QMainWindow(parent),
     ui(new Ui::Login),
     player(player),
     client(client),
-    menuWindow(nullptr)
+    menuWindow(nullptr),
+    RP(nullptr)
 {
     ui->setupUi(this);
     ui->Login_Btn->setEnabled(false);
@@ -18,12 +21,17 @@ Login::Login(Player& player, Client *client, QWidget *parent)
     connect(ui->Log_Email_Radio, &QRadioButton::clicked, this, &Login::Update_Login_Btn);
     connect(ui->Log_Uname_Radio, &QRadioButton::clicked, this, &Login::Update_Login_Btn);
     connect(ui->UE_text, &QTextEdit::textChanged, this, &Login::Update_Login_Btn);
-    connect(ui->Pwd_text, &QTextEdit::textChanged, this, &Login::Update_Login_Btn);
+    connect(ui->Pwd_text, &QLineEdit::textChanged, this, &Login::Update_Login_Btn);
     connect(ui->Login_Btn, &QPushButton::clicked, this, &Login::Login_Btn_Clicked);
+    connect(ui->Forgot_Btn, &QPushButton::clicked, this, &Login::Recover_Btn_Clicked);
+
+    client->SetLogin(this);
 }
 
 Login::~Login()
 {
+    delete menuWindow;
+    delete RP;
     delete ui;
 }
 
@@ -31,33 +39,28 @@ void Login::Open_menu()
 {
     if (!menuWindow) {
         menuWindow = new MainMenu(player, client);
+        client->SetMainMenu(menuWindow);
     }
     menuWindow->show();
-    this->close();
+    this->hide();
 }
 
 void Login::Update_Login_Btn()
 {
     bool radioChecked = ui->Log_Email_Radio->isChecked() || ui->Log_Uname_Radio->isChecked();
-    bool textFilled = !ui->Pwd_text->toPlainText().trimmed().isEmpty() &&
-                      !ui->UE_text->toPlainText().trimmed().isEmpty();
+    bool textFilled = !ui->UE_text->toPlainText().trimmed().isEmpty() &&
+                      !ui->Pwd_text->text().trimmed().isEmpty();
 
-    // Update label based on radio button selection
-    if (ui->Log_Email_Radio->isChecked() || ui->Log_Uname_Radio->isChecked()) {
-        ui->UE_Label_2->setText(ui->Log_Email_Radio->isChecked() ? "Email" : "Username");
-    }
-
-    // Enable login button only if radio button is selected and fields are filled
+    ui->UE_Label_2->setText(ui->Log_Email_Radio->isChecked() ? "Email" : "Username");
     ui->Login_Btn->setEnabled(radioChecked && textFilled);
 }
 
 void Login::Login_Btn_Clicked()
 {
     QString inputText = ui->UE_text->toPlainText().trimmed();
-    QString password = ui->Pwd_text->toPlainText().trimmed();
+    QString password = ui->Pwd_text->text().trimmed();
     QString type = ui->Log_Email_Radio->isChecked() ? "E" : "U";
 
-    // Validate inputs and collect errors
     QStringList errors;
     if (ui->Log_Email_Radio->isChecked()) {
         if (QString err = InputValidator::validateEmail(inputText); !err.isEmpty())
@@ -69,15 +72,20 @@ void Login::Login_Btn_Clicked()
     if (QString err = InputValidator::validatePassword(password); !err.isEmpty())
         errors << "Password: " + err;
 
-    // Display errors if any
     if (!errors.isEmpty()) {
-        QString errorText = "Please fix the following errors:\n\n";
-        errorText += errors.join("\n");
-        QMessageBox::warning(this, "Invalid Input", errorText);
+        QMessageBox::warning(this, "Invalid Input", errors.join("\n"));
         return;
     }
 
-    // Send data to server if inputs are valid
-    QString data = QString("L[%1][%2][%3]").arg(type, inputText, password);
+    QString data = QString("L[%1][%2][%3]\n").arg(type, inputText, password);
     client->WriteToServer(data);
+}
+
+void Login::Recover_Btn_Clicked()
+{
+    if (!RP) {
+        RP = new RecoverPass(client, this);
+    }
+    RP->show();
+    this->hide();
 }

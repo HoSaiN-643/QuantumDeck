@@ -14,12 +14,13 @@ Connect::Connect(Player& player, Client *client, QWidget *parent)
     logWindow(new Log(player, client, this))
 {
     ui->setupUi(this);
-    client->SetConnect(this); // Inform Client of this instance
+    client->SetConnect(this);
     connect(ui->Connect_Btn, &QPushButton::clicked, this, &Connect::Connect_Btn_clicked);
 }
 
 Connect::~Connect()
 {
+    delete logWindow;
     delete ui;
 }
 

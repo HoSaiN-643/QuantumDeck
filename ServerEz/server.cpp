@@ -1,283 +1,347 @@
 #include "server.h"
 #include <QDebug>
-#include "pregame.h"
+#include <QTimer>
 #include "game.h"
 
-SERVER::SERVER(MemberDatabaseManager& db, const QString& address, int port, QObject* parent)
-    : QObject(parent), server(new QTcpServer(this)), total(0), db(db), lobby(nullptr), game(nullptr)
+SERVER::SERVER(MemberDatabaseManager* dbManager, const QString& address, QObject *parent)
+    : QTcpServer(parent), dbManager(dbManager), address(address), port(8888), preGame(nullptr), game(nullptr)
 {
-    if (!db.open()) {
-        qWarning() << "Cannot open member database!";
-        return;
-    }
-    db.createMemberTable();
-
-    if (!server->listen(QHostAddress(address), port)) {
-        qWarning() << "Server could not start on" << address << ":" << port
-                   << "— error:" << server->errorString();
-        return;
-    }
-
-    qDebug() << "Server started on" << address << ":" << port;
-    connect(server, &QTcpServer::newConnection, this, &SERVER::OnNewConnection);
+    connect(this, &QTcpServer::newConnection, this, &SERVER::onNewConnection);
 }
 
 SERVER::~SERVER()
 {
-    if (lobby) delete lobby;
-    if (game) delete game;
-    for (auto client : clients.keys()) {
-        client->deleteLater();
+    if (preGame) {
+        delete preGame;
     }
-    server->close();
+    if (game) {
+        delete game;
+    }
+    for (auto client : clients.keys()) {
+        client->close();
+        delete client;
+    }
 }
 
-void SERVER::OnNewConnection()
+void SERVER::setIP(const QString &address)
 {
-    while (server->hasPendingConnections()) {
-        QTcpSocket* client = server->nextPendingConnection();
+    this->address = address;
+}
+
+void SERVER::setPort(quint16 port)
+{
+    this->port = port;
+}
+
+void SERVER::onNewConnection()
+{
+    while (hasPendingConnections()) {
+        QTcpSocket* client = nextPendingConnection();
         if (!client) {
             qDebug() << "Null client socket received";
             continue;
         }
-        clients.insert(client, QStringLiteral(""));
-        ++total;
-        qDebug() << "New client connected, total =" << total;
+        clients.insert(client, QString());
+        qDebug() << "New client connected, total =" << clients.size();
 
-        connect(client, &QTcpSocket::readyRead, this, &SERVER::OnReadyRead);
-        connect(client, &QTcpSocket::disconnected, this, [this, client]() {
-            OnClientDisconnection(client);
-        });
+        connect(client, &QTcpSocket::readyRead, this, &SERVER::onReadyRead);
+        connect(client, &QTcpSocket::disconnected, this, &SERVER::onClientDisconnection);
     }
 }
 
-QStringList SERVER::extractFields(const QString &s) const
-{
-    QStringList list;
-    int pos = 0;
-    while (true) {
-        int a = s.indexOf('[', pos);
-        int b = s.indexOf(']', a + 1);
-        if (a < 0 || b < 0) break;
-        list << s.mid(a + 1, b - a - 1);
-        pos = b + 1;
-    }
-    return list;
-}
-
-void SERVER::OnReadyRead()
+void SERVER::onReadyRead()
 {
     QTcpSocket *client = qobject_cast<QTcpSocket*>(sender());
     if (!client) {
-        qDebug() << "Client is null in OnReadyRead";
+        qDebug() << "Client is null in onReadyRead";
         return;
     }
     QByteArray raw = client->readAll();
-    if (raw.isEmpty()) {
-        qDebug() << "Raw data is empty";
-        return;
-    }
+    qDebug() << "Received raw data (full buffer):" << raw.toHex();
 
-    QString message = QString::fromUtf8(raw).trimmed();
-    QStringList parts = message.split('\n', Qt::SkipEmptyParts);
-    for (const QString &line : parts) {
-        char cmd = line.at(0);
-        QString payload = line.mid(1);
+    while (!raw.isEmpty()) {
+        int end = raw.indexOf('\n');
+        if (end == -1) {
+            qDebug() << "Incomplete message, waiting for more data:" << raw;
+            break;
+        }
+
+        QByteArray line = raw.left(end);
+        raw = raw.mid(end + 1);
+
+        if (line.isEmpty()) {
+            qDebug() << "Empty line skipped";
+            continue;
+        }
+
+        QString message = QString::fromUtf8(line).trimmed();
+        QChar cmd = message.at(0);
+        QString payload = message.mid(1);
         QStringList fields = extractFields(payload);
-        qDebug() << "Type received:" << cmd;
+        qDebug() << "Received from" << clients[client] << ": cmd =" << cmd << ", raw message =" << message << ", fields =" << fields;
 
-        switch (cmd) {
+        if (fields.isEmpty()) {
+            handleUnknown(client);
+            continue;
+        }
+
+        switch (cmd.unicode()) {
         case 'L': handleLogin(client, fields); break;
         case 'S': handleSignup(client, fields); break;
         case 'R': handleRecover(client, fields); break;
-        case 'C': handleClientCommand(client, fields); break;
         case 'P': handlePreGame(client, fields); break;
+        case 'C': handleUpdateProfile(client, fields); break;
         case 'G':
-            if (game) game->handleClientMessage(client, fields);
-            else handleUnknown(client);
+            if (game) {
+                if (fields[0] == "CHAT") {
+                    game->processChatMessage(client, fields);
+                }
+            } else {
+                qDebug() << "Game object is null, cannot process chat";
+            }
             break;
         default: handleUnknown(client); break;
         }
     }
 }
-void SERVER::onGameStarted(const QStringList& players)
+
+void SERVER::handleLogin(QTcpSocket *client, const QStringList &fields)
 {
-    qDebug() << "Game started with players:" << players;
-    if (lobby) {
-        delete lobby;
-        lobby = nullptr;
-    }
-    game = new Game(players, clients, this);
-    connect(game, &Game::gameFinished, this, &SERVER::onGameFinished);
-    game->start();
-}
-
-void SERVER::onGameFinished()
-{
-    if (game) {
-        delete game;
-        game = nullptr;
-    }
-}
-
-void SERVER::handleLogin(QTcpSocket *client, const QStringList &f)
-{
-    if (f.size() != 3) {
-        client->write("L[ERROR][Bad format received]\n");
+    if (fields.size() != 3) {
+        client->write("L[ERROR][Bad format: Expected L[type][id][password]]\n");
         client->flush();
         return;
     }
 
-    const QString type = f[0].toUpper();
-    const QString id = f[1];
-    const QString pwd = f[2];
+    QString type = fields[0];
+    QString inputText = fields[1];
+    QString password = fields[2];
+    QString username;
 
-    QVariantMap member;
-    if (type == "E") member = db.GetMemberByEmail(id);
-    else if (type == "U") member = db.GetMemberByUsername(id);
-    else {
-        client->write("L[ERROR][Invalid login type]\n");
-        client->flush();
-        return;
-    }
-
-    if (member.isEmpty()) {
-        client->write("L[FAIL][Member not found]\n");
-        client->flush();
-        return;
-    }
-
-    if (member.value("password").toString() != pwd) {
-        client->write("L[WRONG][Wrong password]\n");
-        client->flush();
-        return;
-    }
-
-    QString resp = QString(
-                       "L[OK][Successful login][%1][%2][%3][%4][%5][%6]\n"
-                       ).arg(
-                           member.value("firstname").toString(),
-                           member.value("lastname").toString(),
-                           member.value("email").toString(),
-                           member.value("phone").toString(),
-                           member.value("username").toString(),
-                           member.value("password").toString()
-                           );
-
-    client->write(resp.toUtf8());
-    client->flush();
-    clients[client] = member.value("username").toString();
-}
-
-void SERVER::handleSignup(QTcpSocket *client, const QStringList &f)
-{
-    if (f.size() != 6) {
-        client->write("S[ERROR][Bad format received]\n");
-        client->flush();
-        return;
-    }
-    const QString first = f[0], last = f[1],
-        email = f[2], phone = f[3],
-        uname = f[4], pwd = f[5];
-
-    db.addMember(client, first, last, email, phone, uname, pwd);
-}
-
-void SERVER::handleRecover(QTcpSocket *client, const QStringList &f)
-{
-    if (f.size() != 1) {
-        client->write("R[ERROR][Bad format received]\n");
-        client->flush();
-        return;
-    }
-    const QString phone = f[0];
-    const QVariantMap member = db.GetMemberByPhone(phone);
-
-    if (member.isEmpty()) {
-        client->write("R[WRONG][Phone not registered]\n");
-        client->flush();
-    } else {
-        const QString resp = QString("R[OK][Password recovered][%1]\n")
-        .arg(member.value("password").toString());
-        client->write(resp.toUtf8());
-        client->flush();
-    }
-}
-
-void SERVER::handleClientCommand(QTcpSocket *client, const QStringList &f)
-{
-    if (f.size() < 1) {
-        client->write("C[ERROR][Invalid command format]\n");
-        client->flush();
-        return;
-    }
-
-    if (f[0].toUpper() == "CF") {
-        if (f.size() != 8) {
-            client->write("C[CF][ERROR][Invalid number of fields]\n");
+    if (type == "U") {
+        username = inputText;
+    } else if (type == "E") {
+        username = dbManager->getUsernameFromEmail(inputText);
+        if (username.isEmpty()) {
+            client->write("L[ERROR][Email not found]\n");
             client->flush();
             return;
         }
-
-        db.updateMemberAllFields(client, f[7], f[1], f[2], f[3], f[4], f[5], f[6]);
     } else {
-        client->write("C[ERROR][Unknown client command]\n");
+        client->write("L[ERROR][Invalid login type: Must be U or E]\n");
+        client->flush();
+        return;
+    }
+
+    QVariantMap info = dbManager->getMemberInfo(username);
+    if (info.isEmpty() || info["password"].toString() != password) {
+        client->write("L[ERROR][Invalid username or password]\n");
+        client->flush();
+        return;
+    }
+
+    clients[client] = username;
+    QString message = QString("L[OK][Successful login][%1][%2][%3][%4][%5][%6]")
+                          .arg(info["firstName"].toString(),
+                               info["lastName"].toString(),
+                               info["phone"].toString(),
+                               info["email"].toString(),
+                               username,
+                               info["password"].toString());
+    QList<QVariantMap> history = dbManager->getGameHistory(username);
+    if (!history.isEmpty()) {
+        message += "[HIST]";
+        for (const auto &game : history) {
+            message += QString("[%1,%2,%3]")
+            .arg(game["player1_username"].toString(),
+                 game["player2_username"].toString(),
+                 game["winner_username"].toString());
+        }
+    }
+    message += "\n";
+    client->write(message.toUtf8());
+    client->flush();
+}
+
+void SERVER::onClientDisconnection()
+{
+    QTcpSocket *client = qobject_cast<QTcpSocket*>(sender());
+    if (!client) return;
+
+    QString username = clients.value(client);
+    qDebug() << "Client" << username << "disconnected";
+    clients.remove(client);
+    client->deleteLater();
+
+    if (preGame && !preGame->isFull()) {
+        delete preGame;
+        preGame = nullptr;
+        qDebug() << "PreGame cancelled due to disconnection";
+    }
+    if (game) {
+        delete game;
+        game = nullptr;
+        qDebug() << "Game deleted due to disconnection";
+    }
+}
+
+void SERVER::onStartGame(const QStringList &players)
+{
+    qDebug() << "Starting game with players:" << players;
+    if (game) {
+        delete game;
+    }
+    game = new Game(players, clients, *dbManager, this);
+    connect(game, &Game::gameFinished, this, [this]() {
+        if (game) {
+            delete game;
+            game = nullptr;
+        }
+        preGame = nullptr;
+        qDebug() << "Game finished, lobby reset";
+    });
+    game->start();
+}
+
+void SERVER::handleSignup(QTcpSocket *client, const QStringList &fields)
+{
+    if (fields.size() != 6) {
+        client->write("S[ERROR][Bad format: Expected S[firstname][lastname][phone][email][username][password]]\n");
+        client->flush();
+        return;
+    }
+
+    QString firstName = fields[0];
+    QString lastName = fields[1];
+    QString phone = fields[2];
+    QString email = fields[3];
+    QString username = fields[4];
+    QString password = fields[5];
+
+    if (!dbManager->isValidSignup(firstName, lastName, phone, email, username, password)) {
+        client->write("S[ERROR][All fields must be non-empty]\n");
+        client->flush();
+        return;
+    }
+
+    if (dbManager->addMember(firstName, lastName, phone, email, username, password)) {
+        client->write("S[OK][Signup successful]\n");
+        client->flush();
+    } else {
+        client->write("S[ERROR][Username or email already exists]\n");
         client->flush();
     }
 }
 
-void SERVER::handlePreGame(QTcpSocket *client, const QStringList &f)
+void SERVER::handleRecover(QTcpSocket *client, const QStringList &fields)
 {
-    if (f.size() != 1) {
-        client->write("P[ERROR][Bad format received]\n");
-        client->flush();
-        return;
-    }
-    bool ok = false;
-    int wantedPlayers = f[0].toInt(&ok);
-    if (!ok || wantedPlayers < 2 || wantedPlayers > 4) { // محدود کردن تعداد بازیکنان
-        client->write("P[ERROR][Invalid mode]\n");
+    if (fields.size() != 1) {
+        client->write("R[ERROR][Bad format: Expected R[phone]]\n");
         client->flush();
         return;
     }
 
-    auto pair = qMakePair(client, clients.value(client));
-    if (pair.second.isEmpty()) {
-        client->write("P[ERROR][You must login first]\n");
+    QString phone = fields[0];
+    QString password = dbManager->getPasswordFromPhone(phone);
+    if (password.isEmpty()) {
+        client->write("R[ERROR][Phone number not found]\n");
         client->flush();
-        return;
-    }
-
-    if (!lobby || lobby->IsServerFull) {
-        lobby = new PreGame(wantedPlayers, pair, this);
-        connect(lobby, &PreGame::startGame, this, &SERVER::onGameStarted);
     } else {
-        lobby->AddPlayer(pair);
+        client->write(QString("R[OK][Password found][%1]\n").arg(password).toUtf8());
+        client->flush();
+    }
+}
+
+void SERVER::handlePreGame(QTcpSocket *client, const QStringList &fields)
+{
+    if (fields.size() != 1) {
+        client->write("P[ERROR][Bad format: Expected P[mode]]\n");
+        client->flush();
+        return;
+    }
+
+    bool ok;
+    int mode = fields[0].toInt(&ok);
+    if (!ok || mode != 2) {
+        client->write("P[ERROR][Only 2-player mode supported]\n");
+        client->flush();
+        return;
+    }
+
+    QString username = clients[client];
+    if (username.isEmpty()) {
+        client->write("P[ERROR][Not logged in]\n");
+        client->flush();
+        return;
+    }
+
+    if (!preGame) {
+        preGame = new PreGame(2, {client, username}, this);
+        connect(preGame, &PreGame::startGame, this, &SERVER::onStartGame);
+    } else if (!preGame->isFull()) {
+        preGame->addPlayer({client, username});
+    } else {
+        client->write("P[FULL][Server is full]\n");
+        client->flush();
+    }
+}
+
+void SERVER::handleUpdateProfile(QTcpSocket *client, const QStringList &fields)
+{
+    if (fields.size() != 8 || fields[0] != "CF") {
+        client->write("C[ERROR][Bad format: Expected C[CF][firstname][lastname][phone][email][newUsername][password][oldUsername]]\n");
+        client->flush();
+        return;
+    }
+
+    QString username = clients[client];
+    if (username.isEmpty()) {
+        client->write("C[ERROR][Not logged in]\n");
+        client->flush();
+        return;
+    }
+
+    QString firstName = fields[1];
+    QString lastName = fields[2];
+    QString phone = fields[3];
+    QString email = fields[4];
+    QString newUsername = fields[5];
+    QString password = fields[6];
+    QString oldUsername = fields[7];
+
+    if (oldUsername != username) {
+        client->write("C[ERROR][Old username does not match logged-in user]\n");
+        client->flush();
+        return;
+    }
+
+    if (dbManager->updateMemberAllFields(oldUsername, firstName, lastName, phone, email, newUsername, password)) {
+        clients[client] = newUsername;
+        client->write(QString("C[CF][OK][Information updated successfully][%1][%2][%3][%4][%5][%6]\n")
+                          .arg(firstName, lastName, phone, email, newUsername, password).toUtf8());
+        client->flush();
+    } else {
+        client->write("C[CF][ERROR][Update failed: Username or email may already exist]\n");
+        client->flush();
     }
 }
 
 void SERVER::handleUnknown(QTcpSocket *client)
 {
-    client->write("X[ERROR][Unknown command]");
+    client->write("X[ERROR][Unknown command]\n");
     client->flush();
 }
 
-void SERVER::OnClientDisconnection(QTcpSocket* client)
+QStringList SERVER::extractFields(const QString &payload) const
 {
-    QString name = clients.value(client);
-    qDebug() << "Client" << name << "disconnected";
-    clients.remove(client);
-    --total;
-    qDebug() << "Total clients now =" << total;
-    client->deleteLater();
-}
-
-void SERVER::onGameStarted(const QStringList& players)
-{
-    qDebug() << "Game started with players:" << players;
-    // در اینجا می‌توانید منطق شروع بازی را اضافه کنید
-    if (lobby) {
-        delete lobby;
-        lobby = nullptr;
+    QStringList fields;
+    int pos = 0;
+    while (true) {
+        int start = payload.indexOf('[', pos);
+        int end = payload.indexOf(']', start + 1);
+        if (start < 0 || end < 0) break;
+        fields << payload.mid(start + 1, end - start - 1);
+        pos = end + 1;
     }
+    return fields;
 }

@@ -1,9 +1,8 @@
-// cardmanager.h
 #ifndef CARDMANAGER_H
 #define CARDMANAGER_H
 
 #include <QVector>
-#include <card.h>
+#include "card.h"
 
 class CardManager
 {
